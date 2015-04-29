@@ -1,0 +1,83 @@
+
+ Gopherus v1.0a Copyright (C) Mateusz Viste 2013
+
+
+ ** Key bindings **
+
+ Gopherus is a console-mode gopher client. It's entirely keyboard-driven, thus
+ knowing its key bindings is mandatory for comfortable gopher browsing.
+
+ Key bindings:
+   TAB       - Switch to/from URL bar edition
+   ESC       - Quit Gopherus (requires a confirmation)
+   UP/DOWN   - Scroll the screen's content up/down by one line
+   PGUP/PGDW - Scroll the screen's content up/down by one page
+   HOME/END  - Go to the begin/end of the document
+   BACKSPC   - Go back to the previous location
+   F1        - Show help (this manual)
+   F5        - Refresh current location
+   F9        - Download location on disk
+
+
+ ** Customizing the color scheme **
+
+ The Gopherus color scheme can be customized, if the default one is not suiting
+ you. To customize the color scheme of Gopherus, you will have to set an
+ environnment variable 'GOPHERUSCOLOR' prior to Gopherus launching. This
+ variable have to contain exacty 6 color attributes. Each attribute is
+ describing the foreground/background color for a given element of the Gopherus
+ user interface. An attribute is composed from two hexadecimal digits: XY,
+ where X is the background color, and Y is the foreground color. Colors are
+ indexed as in the classic CGA palette, that is:
+
+ Index - Color
+   0   -  black
+   1   -  low blue
+   2   -  low green
+   3   -  low cyan
+   4   -  low red
+   5   -  low magenta
+   6   -  low brown
+   7   -  light gray
+   8   -  dark gray
+   9   -  high blue
+   A   -  high green
+   B   -  high cyan
+   C   -  high red
+   D   -  high magenta
+   E   -  yellow
+   F   -  high intensity white
+
+ GOPHERUSCOLOR=aabbccddeeffgghhii
+                | | | | | | | | |
+                | | | | | | | | |
+                | | | | | | | | +- Selected item in menu
+                | | | | | | | |
+                | | | | | | | +--- Selectable items in menu
+                | | | | | | |
+                | | | | | | +----- Error item in menu
+                | | | | | |
+                | | | | | +------- Itemtype column in menus
+                | | | | |
+                | | | | +--------- URL bar side decorations
+                | | | |
+                | | | +----------- URL bar
+                | | |
+                | | +------------- Status bar (warning)
+                | |
+                | +--------------- Status bar (information)
+                |
+                +----------------- Normal text (text files or menu 'i' items)
+
+ Example:
+  The default palette used by Gopherus is.......: "177047707818141220"
+  For a black & white mode, use.................: "077070707808070770"
+  Missing those green 1980-like phosphor CRTs?..: "022020202002020220"
+
+
+ ** Final notes **
+
+ Gopherus has been written with care to behave nicely and follow standards.
+ It conforms closely to following guidelines:
+   RFC 1436: The Internet Gopher Protocol
+   RFC 4266: The gopher URI Scheme

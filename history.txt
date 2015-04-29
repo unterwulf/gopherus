@@ -1,0 +1,12 @@
+
+Gopherus changelog
+
+
+Gopherus v1.0a [30 Mar 2013]:
+ - [fix] When refreshing a location, the display properties (position of the file on screen) are reset as well now. This prevents corrupt rendering if the file changes between refreshes,
+ - [fix] Fixed a bug leading to random crashes when the URL inside a menu was longer than 128 bytes,
+ - [new] F9 (save) works from within text content locations (not only from menus),
+ - [new] Added configurable color schemes, via the GOPHERUSCOLOR environment variable (see the manual for details).
+
+Gopherus v1.0 [10 Mar 2013]:
+ - first public release.

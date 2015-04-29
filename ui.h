@@ -1,0 +1,41 @@
+/*
+ * This file is part of the gopherus project.
+ * It provides abstract functions to draw on terminal's screen.
+ *
+ * Copyright (C) Mateusz Viste 2013
+ */
+
+#ifndef ui_h_sentinel
+#define ui_h_sentinel
+
+/* returns the number of rows of current text mode */
+int ui_getrowcount();
+
+/* returns the number of columns of current text mode */
+int ui_getcolcount();
+
+/* clear the screen */
+void ui_cls();
+
+/* print a string on screen, and go to next line */
+void ui_puts(char *str);
+
+/* Set the position (zero-based) of the cursor on screen */
+void ui_locate(int y, int x);
+
+/* Put a char directly on screen, without playing with the cursor. Coordinates are zero-based. */
+void ui_putchar(char c, int attr, int x, int y);
+
+/* waits for a key to be pressed and returns it. ALT+keys have 0x100 added to them. */
+int ui_getkey();
+
+/* returns 0 if no key is awaiting in the keyboard buffer, non-zero otherwise */
+int ui_kbhit();
+
+/* makes the cursor visible */
+void ui_cursor_show();
+
+/* hides the cursor */
+void ui_cursor_hide();
+
+#endif

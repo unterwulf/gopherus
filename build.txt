@@ -1,0 +1,25 @@
+
+ * Building instructions *
+
+ There is nothing particular to know about the building process of Gopherus.
+ It's shipped with Makefile files for different operating systems, therefore
+ the whole thing would be about using the right one.
+
+ 
+ * What compiler to use *
+  
+ Or, should I say, what I used to compile Gopherus:
+  DOS: DJGPP (+Watt32)
+  Linux: gcc (+SDL)
+  Windows: Mingw (+SDL)
+
+
+ * Dependencies *
+
+  DOS
+    The DOS version relies on the Watt32 library for all network operations.
+  Linux & Windows
+    Non-DOS version are built against SDL to emulate a pseudo terminal. All
+    network operations are performed using classic BSD sockets.
+
+ - Mateusz Viste

@@ -1,0 +1,12 @@
+
+ Stuff that I'd like to get done on Gopherus (but probably won't ever have time to do it)
+
+  - Display graphic files (bmp, png, jpg, gif..)
+  - command line download mode (--saveto)
+  - configuration file (for memory settings)
+  - timeout and user cancel when in connecting... phase
+  - timeout and user cancel when in resolving... phase
+  - Bookmarks
+  - recognize GET pseudo-http-selectors (not sure anyone uses them anymore..)
+  - UTF8 support
+  - IPv6 support
