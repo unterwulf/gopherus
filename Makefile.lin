@@ -1,44 +1,24 @@
 CFLAGS = -std=gnu89 -O3 -Wall -Wextra -pedantic -g
-LIB = -lSDL
+LIBS = -lSDL
+UPX = upx
 
 all: gopherus
 
 gopherus: gopherus.o dnscache.o history.o int2str.o net.o parseurl.o startpg.o ui.o wordwrap.o
-	gcc gopherus.o dnscache.o history.o int2str.o net.o parseurl.o startpg.o ui.o wordwrap.o -o gopherus $(LIB) $(CFLAGS)
-	upx --best --lzma --all-filters gopherus
-
-gopherus.o: gopherus.c
-	gcc -c gopherus.c -o gopherus.o $(CFLAGS)
-
-dnscache.o: dnscache.c
-	gcc -c dnscache.c -o dnscache.o $(CFLAGS)
-
-history.o: history.c
-	gcc -c history.c -o history.o $(CFLAGS)
-
-int2str.o: int2str.c
-	gcc -c int2str.c -o int2str.o $(CFLAGS)
+	$(CC) $^ $(LIBS) -o $@
+	$(UPX) --best --lzma --all-filters $@
 
 net.o: net-lin.c
-	gcc -c net-lin.c -o net.o $(CFLAGS)
-
-parseurl.o: parseurl.c
-	gcc -c parseurl.c -o parseurl.o $(CFLAGS)
-
-startpg.o: startpg.c
-	gcc -c startpg.c -o startpg.o $(CFLAGS)
+	$(CC) $(CFLAGS) -c $< -o $@
 
 ui.o: ui-sdl.c
-	gcc -c ui-sdl.c -o ui.o $(CFLAGS)
+	$(CC) $(CFLAGS) -c $< -o $@
 
-wordwrap.o: wordwrap.c
-	gcc -c wordwrap.c -o wordwrap.o $(CFLAGS)
-
-wraptest.exe: wraptest.c wordwrap.o
-	gcc wraptest.c wordwrap.o -o wraptest.exe $(CFLAGS)
+wraptest: wraptest.o wordwrap.o
+	$(CC) $^ -o $@
 
 pkg: gopherus
-	rm -rf pkg_lin
+	$(RM) -r pkg_lin
 	mkdir pkg_lin
 	cp gopherus pkg_lin
 	cp gopherus.txt pkg_lin
@@ -47,5 +27,6 @@ pkg: gopherus
 	cp icon.svg pkg_lin/gopherus.svg
 
 clean:
-	rm -f *.o
-	rm -f gopherus
+	$(RM) *.o gopherus
+
+.PHONY: all pkg clean

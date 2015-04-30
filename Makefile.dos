@@ -1,41 +1,19 @@
-CFLAGS = -std=gnu89 -O3 -Wall -Wextra -pedantic -g  -I watt32/inc
-LIB = watt32/bin/libwatt.a
+CFLAGS = -std=gnu89 -O3 -Wall -Wextra -pedantic -g  -I $(WATT_ROOT)/inc
+LIBS = $(WATT_ROOT)/lib/libwatt.a
+UPX = upx
+
+ifeq ($(WATT_ROOT),)
+$(error WATT_ROOT is not set)
+endif
 
 all: gopherus.exe
 
 gopherus.exe: gopherus.o dnscache.o history.o int2str.o net.o parseurl.o startpg.o ui.o wordwrap.o
-	gcc gopherus.o dnscache.o history.o int2str.o net.o parseurl.o startpg.o ui.o wordwrap.o -o gopherus.exe $(LIB) $(CFLAGS)
-	upx --best --lzma --all-filters gopherus.exe
+	$(CC) $^ $(LIBS) -o $@
+	$(UPX) --best --lzma --all-filters $@
 
-gopherus.o: gopherus.c
-	gcc -c gopherus.c -o gopherus.o $(CFLAGS)
-
-dnscache.o: dnscache.c
-	gcc -c dnscache.c -o dnscache.o $(CFLAGS)
-
-history.o: history.c
-	gcc -c history.c -o history.o $(CFLAGS)
-
-int2str.o: int2str.c
-	gcc -c int2str.c -o int2str.o $(CFLAGS)
-
-net.o: net.c
-	gcc -c net.c -o net.o $(CFLAGS)
-
-parseurl.o: parseurl.c
-	gcc -c parseurl.c -o parseurl.o $(CFLAGS)
-
-startpg.o: startpg.c
-	gcc -c startpg.c -o startpg.o $(CFLAGS)
-
-ui.o: ui.c
-	gcc -c ui.c -o ui.o $(CFLAGS)
-
-wordwrap.o: wordwrap.c
-	gcc -c wordwrap.c -o wordwrap.o $(CFLAGS)
-
-wraptest.exe: wraptest.c wordwrap.o
-	gcc wraptest.c wordwrap.o -o wraptest.exe $(CFLAGS)
+wraptest.exe: wraptest.o wordwrap.o
+	$(CC) $^ -o $@
 
 pkg: gopherus.exe
 	if exist pkg_dos\nul deltree /y pkg_dos
@@ -49,3 +27,5 @@ pkg: gopherus.exe
 clean:
 	del *.o
 	del gopherus.exe
+
+.PHONY: all pkg clean
