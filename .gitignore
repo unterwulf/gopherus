@@ -1,0 +1,9 @@
+*.o
+*.obj
+*.OBJ
+*.MAP
+*.exe
+*.EXE
+cscope.*
+gopherus
+wraptest
