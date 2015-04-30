@@ -5,8 +5,8 @@
  * Copyright (C) Mateusz Viste 2013
  */
 
-#ifndef ui_h_sentinel
-#define ui_h_sentinel
+#ifndef UI_H
+#define UI_H
 
 /* returns the number of rows of current text mode */
 int ui_getrowcount();

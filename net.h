@@ -4,8 +4,8 @@
  */
 
 
-#ifndef libtcp_hdr
-#define libtcp_hdr
+#ifndef NET_H
+#define NET_H
 
 struct net_tcpsocket {
   void *sock;

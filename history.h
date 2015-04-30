@@ -3,8 +3,8 @@
  * Copyright (C) Mateusz Viste 2013
  */
 
-#ifndef history_h_sentinel
-#define history_h_sentinel
+#ifndef HISTORY_H
+#define HISTORY_H
 
 struct historytype {
   long cachesize;

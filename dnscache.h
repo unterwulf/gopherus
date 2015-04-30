@@ -4,11 +4,13 @@
  */
 
 
-#ifndef dnscache_h_sentinel
-  #define dnscache_h_sentinel
-  /* returns the ip addr if host found in cache, 0 otherwise */
-  unsigned long dnscache_ask(char *host);
+#ifndef DNSCACHE_H
+#define DNSCACHE_H
 
-  /* adds a new entry to the DNS cache */
-  void dnscache_add(char *host, unsigned long ipaddr);
+/* returns the ip addr if host found in cache, 0 otherwise */
+unsigned long dnscache_ask(char *host);
+
+/* adds a new entry to the DNS cache */
+void dnscache_add(char *host, unsigned long ipaddr);
+
 #endif
