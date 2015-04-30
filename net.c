@@ -3,7 +3,7 @@
  *  It provides a set of basic network-related functions.
  *
  *  Copyright (C) Mateusz Viste 2013
- * 
+ *
  * Provides all network functions used by Gopherus, wrapped around the WatTCP TCP/IP stack.
  */
 

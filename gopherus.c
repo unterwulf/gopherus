@@ -748,7 +748,7 @@ int display_text(struct historytype **history, struct gopherusconfig *cfg, char 
       case 0x143: /* F9 - download */
         history_add(history, (*history)->protocol, (*history)->host, (*history)->port, '9', (*history)->selector);
         return(DISPLAY_ORDER_NONE);
-        break;        
+        break;
       case 0x148: /* UP */
         if (firstline > 0) {
             firstline -= 1;

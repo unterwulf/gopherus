@@ -1,7 +1,7 @@
 /*
  * This file is part of the Gopherus project
  * Copyright (C) Mateusz Viste 2013
- * 
+ *
  * Provides all network functions used by Gopherus, wrapped around POSIX (BSD) sockets.
  */
 

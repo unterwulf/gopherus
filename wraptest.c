@@ -1,7 +1,7 @@
 /*
  * This file is part of the Gopherus project
  * Copyright (C) Mateusz Viste 2013
- * 
+ *
  */
 
 #include <stdio.h>

@@ -3,7 +3,7 @@
  * It provides abstract functions to draw on screen.
  *
  * Copyright (C) Mateusz Viste 2013
- * 
+ *
  * Provides all UI functions used by Gopherus, wrapped around a virtual terminal emulated via SDL calls.
  */
 
@@ -104,7 +104,7 @@ void ui_putchar(char c, int attr, int x, int y) {
       for (xx = 0; xx < 8; xx++) {
         if ((ascii_font[('_' << 4) + yy] & (1 << xx)) != 0) {
           putpixel(screen, (x << 3) + 7 - xx, (y << 4) + yy, attrpal[attr & 0x0F]);
-        }      
+        }
       }
     }
   }

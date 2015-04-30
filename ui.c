@@ -3,7 +3,7 @@
  * It provides abstract functions to draw on screen.
  *
  * Copyright (C) Mateusz Viste 2013
- * 
+ *
  * Provides all UI functions used by Gopherus, basing on DJGPP conio facilities.
  */
 
