@@ -9,13 +9,13 @@
 #define UI_H
 
 /* returns the number of rows of current text mode */
-int ui_getrowcount();
+int ui_getrowcount(void);
 
 /* returns the number of columns of current text mode */
-int ui_getcolcount();
+int ui_getcolcount(void);
 
 /* clear the screen */
-void ui_cls();
+void ui_cls(void);
 
 /* print a string on screen, and go to next line */
 void ui_puts(char *str);
@@ -27,15 +27,15 @@ void ui_locate(int y, int x);
 void ui_putchar(char c, int attr, int x, int y);
 
 /* waits for a key to be pressed and returns it. ALT+keys have 0x100 added to them. */
-int ui_getkey();
+int ui_getkey(void);
 
 /* returns 0 if no key is awaiting in the keyboard buffer, non-zero otherwise */
-int ui_kbhit();
+int ui_kbhit(void);
 
 /* makes the cursor visible */
-void ui_cursor_show();
+void ui_cursor_show(void);
 
 /* hides the cursor */
-void ui_cursor_hide();
+void ui_cursor_hide(void);
 
 #endif

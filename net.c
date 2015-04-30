@@ -55,7 +55,7 @@ static int dummy_printf(const char * format, ...)
     return 0;
 }
 
-int net_init()
+int net_init(void)
 {
     tzset();
     _printf = dummy_printf;  /* this is to avoid watt32 printing its stuff to console */

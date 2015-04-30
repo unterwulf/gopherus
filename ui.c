@@ -11,17 +11,17 @@
 #include <pc.h>    /* ScreenRows() */
 #include "ui.h"
 
-int ui_getrowcount()
+int ui_getrowcount(void)
 {
     return ScreenRows();
 }
 
-int ui_getcolcount()
+int ui_getcolcount(void)
 {
     return ScreenCols();
 }
 
-void ui_cls()
+void ui_cls(void)
 {
     clrscr();
 }
@@ -41,22 +41,22 @@ void ui_putchar(char c, int attr, int x, int y)
     ScreenPutChar(c, attr, x, y);
 }
 
-int ui_getkey()
+int ui_getkey(void)
 {
     return getkey();
 }
 
-int ui_kbhit()
+int ui_kbhit(void)
 {
     return kbhit();
 }
 
-void ui_cursor_show()
+void ui_cursor_show(void)
 {
     _setcursortype(_NORMALCURSOR);
 }
 
-void ui_cursor_hide()
+void ui_cursor_hide(void)
 {
     _setcursortype(_NOCURSOR);
 }

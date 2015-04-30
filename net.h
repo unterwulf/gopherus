@@ -16,7 +16,7 @@ struct net_tcpsocket {
 unsigned long net_dnsresolve(const char *name);
 
 /* must be called before using libtcp. returns 0 on success, or non-zero if network subsystem is not available. */
-int net_init();
+int net_init(void);
 
 /* connects to a IPv4 host and returns a socket pointer on success, NULL otherwise */
 struct net_tcpsocket *net_connect(unsigned long ipaddr, int port);

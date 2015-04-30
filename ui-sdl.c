@@ -46,7 +46,7 @@ static void putpixel(SDL_Surface *surface, int x, int y, Uint32 pixel)
     }
 }
 
-static void initsdl()
+static void initsdl(void)
 {
     SDL_Init(SDL_INIT_VIDEO);
     screen = SDL_SetVideoMode(640, 480, 32, 0);
@@ -57,17 +57,17 @@ static void initsdl()
     atexit(SDL_Quit); /* clean up at exit time */
 }
 
-int ui_getrowcount()
+int ui_getrowcount(void)
 {
     return 30;
 }
 
-int ui_getcolcount()
+int ui_getcolcount(void)
 {
     return 80;
 }
 
-void ui_cls()
+void ui_cls(void)
 {
     if (sdlinited == 0)
         initsdl();
@@ -119,7 +119,7 @@ void ui_putchar(char c, int attr, int x, int y)
     SDL_UpdateRect(screen, (x << 3), (y << 4), 8, 16);
 }
 
-int ui_getkey()
+int ui_getkey(void)
 {
     SDL_Event event;
 
@@ -200,7 +200,7 @@ int ui_getkey()
     return 0x00; /* unknown key */
 }
 
-static void flushKeyUpEvents()
+static void flushKeyUpEvents(void)
 {
     int res;
     SDL_Event event;
@@ -213,7 +213,7 @@ static void flushKeyUpEvents()
     }
 }
 
-int ui_kbhit()
+int ui_kbhit(void)
 {
     int res;
 
@@ -225,14 +225,14 @@ int ui_kbhit()
     return (res < 0) ? 0 : res;
 }
 
-void ui_cursor_show()
+void ui_cursor_show(void)
 {
     if (sdlinited == 0)
         initsdl();
     cursorstate = 1;
 }
 
-void ui_cursor_hide()
+void ui_cursor_hide(void)
 {
     if (sdlinited == 0)
         initsdl();

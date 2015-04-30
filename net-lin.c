@@ -26,7 +26,7 @@ unsigned long net_dnsresolve(const char *name)
     return (hent) ? htonl(*((uint32_t *)(hent->h_addr))) : 0;
 }
 
-int net_init()
+int net_init(void)
 {
     return 0;
 }
