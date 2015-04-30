@@ -29,10 +29,8 @@
 #include "parseurl.h"
 #include "ui.h"
 #include "wordwrap.h"
-#include "startpg.h"
-
-#define pVer "1.0a"
-#define pDate "2013"
+#include "embdpage.h"
+#include "version.h"
 
 #define DISPLAY_ORDER_NONE 0
 #define DISPLAY_ORDER_QUIT 1
@@ -824,7 +822,7 @@ long loadfile_buff(int protocol, char *hostaddr, unsigned int hostport, char *se
     struct net_tcpsocket *sock;
     time_t lastactivity, curtime;
     if (hostaddr[0] == '#') { /* embedded start page */
-        reslength = loadembeddedstartpage(buffer, hostaddr + 1, pVer, pDate);
+        reslength = load_embedded_page(buffer, hostaddr + 1);
         /* open file, if downloading to a file */
         if (filename != NULL) {
             fd = fopen(filename, "rb"); /* try to open for read - this should fail */
@@ -864,7 +862,7 @@ long loadfile_buff(int protocol, char *hostaddr, unsigned int hostport, char *se
         return -1;
     }
     if (protocol == PARSEURL_PROTO_HTTP) { /* http */
-        sprintf(buffer, "GET /%s HTTP/1.0\r\nHOST: %s\r\nUSER-AGENT: Gopherus v%s\r\n\r\n", selector, hostaddr, pVer);
+        sprintf(buffer, "GET /%s HTTP/1.0\r\nHOST: %s\r\nUSER-AGENT: Gopherus v" VERSION "\r\n\r\n", selector, hostaddr);
     } else { /* gopher */
         sprintf(buffer, "%s\r\n", selector);
     }
@@ -1005,7 +1003,7 @@ int main(int argc, char **argv)
 
         for (i = 1; i < argc; i++) {
             if ((argv[i][0] == '/') || (argv[i][0] == '-')) { /* unknown parameter */
-                ui_puts("Gopherus v" pVer " Copyright (C) Mateusz Viste " pDate);
+                ui_puts("Gopherus v" VERSION " Copyright (C) Mateusz Viste " DATE);
                 ui_puts("");
                 ui_puts("Usage: gopherus [url]");
                 ui_puts("");

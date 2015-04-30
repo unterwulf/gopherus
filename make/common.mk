@@ -5,11 +5,11 @@ CFLAGS += -O3 -pedantic
 
 objs := \
 	dnscache.o \
+	embdpage.o \
 	gopherus.o \
 	history.o \
 	int2str.o \
 	parseurl.o \
-	startpg.o \
 	wordwrap.o
 
 libs :=
