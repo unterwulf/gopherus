@@ -5,7 +5,7 @@
 #include <string.h>   /* strstr() */
 #include <stdlib.h>   /* atoi() */
 #include "int2str.h"  /* int2str() is used to convert the port into a string */
-#include "parseurl.h" /* include self for control */
+#include "parseurl.h"
 
 int parsegopherurl(char *url, char *host, int *port, char *itemtype, char *selector)
 {

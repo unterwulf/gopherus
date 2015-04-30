@@ -9,7 +9,7 @@
 
 #include <conio.h>
 #include <pc.h>    /* ScreenRows() */
-#include "ui.h"  /* include self for control */
+#include "ui.h"
 
 int ui_getrowcount()
 {

@@ -14,12 +14,10 @@
 /* WatTCP includes */
 #include <tcp.h>
 
-#include "net.h" /* include self for control */
+#include "net.h"
 
 #define BUFFERSIZE  2048
 
-/* this is a wrapper around the wattcp lookup_host(), but with a small integrated cache.
-   returns 0 if resolutin fails. */
 unsigned long net_dnsresolve(const char *name)
 {
     unsigned long hostaddr = 0;
@@ -57,7 +55,6 @@ static int dummy_printf(const char * format, ...)
     return 0;
 }
 
-/* must be called before using libtcp. returns 0 on success, or non-zero if network subsystem is not available. */
 int net_init()
 {
     tzset();
@@ -95,8 +92,6 @@ sock_err:
     return NULL;
 }
 
-/* Sends data on socket 'socket'.
-   Returns the number of bytes sent on success, and <0 otherwise. */
 int net_send(struct net_tcpsocket *socket, char *line, int len)
 {
     int res;
@@ -109,8 +104,6 @@ sock_err:
     return -1;
 }
 
-/* Reads data from socket 'sock' and write it into buffer 'buff', until end of connection. Will fall into error if the amount of data is bigger than 'maxlen' bytes.
-Returns the amount of data read (in bytes) on success, or a negative value otherwise. */
 int net_recv(struct net_tcpsocket *socket, char *buff, int maxlen)
 {
     int i;
@@ -123,7 +116,6 @@ sock_err:
     return -1;
 }
 
-/* Close the 'sock' socket. */
 void net_close(struct net_tcpsocket *socket)
 {
     int status = 0;
@@ -133,7 +125,6 @@ sock_err:
     free(socket);
 }
 
-/* Close the 'sock' socket immediately (to be used when the peer is behaving wrongly) - this is much faster than net_close(). */
 void net_abort(struct net_tcpsocket *socket)
 {
     sock_abort(socket->sock);

@@ -328,7 +328,6 @@ int display_menu(struct historytype **history, struct gopherusconfig *cfg, char 
     bufferlen = (*history)->cachesize;
     memcpy(buffer, (*history)->cache, (*history)->cachesize);
     buffer[bufferlen] = 0;
-    /* */
     linecount = 0;
 
     for (cursor = buffer; cursor < (buffer + bufferlen) ;) {
@@ -1044,7 +1043,7 @@ int main(int argc, char **argv)
         return 3;
     }
 
-    ui_cursor_hide(); /* hide the cursor */
+    ui_cursor_hide();
     ui_cls();
 
     for (;;) {
@@ -1108,7 +1107,7 @@ int main(int argc, char **argv)
         }
     }
 
-    ui_cursor_show(); /* unhide the cursor */
+    ui_cursor_show();
     ui_cls();
 
     if (statusbar[0] != 0)

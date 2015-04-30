@@ -11,23 +11,21 @@
 #include <netdb.h>
 #include <stdio.h> /* sprintf() */
 #include <unistd.h> /* close() */
-#include <errno.h> /* EAGAIN, EWOULDBLOCK... */
+#include <errno.h>
 #include <stdint.h> /* uint32_t */
 
-#include "net.h" /* include self for control */
+#include "net.h"
 
 struct netwrap {
     int fd;
 };
 
-/* this is a wrapper around the wattcp lookup_host(). returns 0 if resolution fails. */
 unsigned long net_dnsresolve(const char *name)
 {
     struct hostent *hent = gethostbyname(name);
     return (hent) ? htonl(*((uint32_t *)(hent->h_addr))) : 0;
 }
 
-/* must be called before using libtcp. returns 0 on success, or non-zero if network subsystem is not available. */
 int net_init()
 {
     return 0;
@@ -75,15 +73,11 @@ struct net_tcpsocket *net_connect(unsigned long ipaddr, int port)
     return result;
 }
 
-/* Sends data on socket 'socket'.
-   Returns the number of bytes sent on success, and <0 otherwise. The error code can be translated into a human error message via libtcp_strerr(). */
 int net_send(struct net_tcpsocket *socket, char *line, int len)
 {
     return send(((struct netwrap *)(socket->sock))->fd, line, len, 0);
 }
 
-/* Reads data from socket 'sock' and write it into buffer 'buff', until end of connection. Will fall into error if the amount of data is bigger than 'maxlen' bytes.
-Returns the amount of data read (in bytes) on success, or a negative value otherwise. The error code can be translated into a human error message via libtcp_strerr(). */
 int net_recv(struct net_tcpsocket *socket, char *buff, int maxlen)
 {
     int res;
@@ -116,14 +110,12 @@ int net_recv(struct net_tcpsocket *socket, char *buff, int maxlen)
     return res;
 }
 
-/* Close the 'sock' socket. */
 void net_close(struct net_tcpsocket *socket)
 {
     close(((struct netwrap *)(socket->sock))->fd);
     free(socket->sock);
 }
 
-/* Close the 'sock' socket immediately (to be used when the peer is behaving wrongly) - this is much faster than net_close(). */
 void net_abort(struct net_tcpsocket *socket)
 {
     net_close(socket);

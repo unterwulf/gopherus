@@ -8,7 +8,7 @@
  */
 
 #include <SDL/SDL.h>
-#include "ui.h"    /* include self for control */
+#include "ui.h"
 #include "ascii.h" /* ascii fonts */
 
 static int cursorx, cursory, sdlinited;
@@ -132,51 +132,51 @@ int ui_getkey()
 
         if (event.type == SDL_KEYDOWN) { /* I'm only interested in key presses */
             switch (event.key.keysym.sym) {
-                case SDLK_ESCAPE: /* Escape */
+                case SDLK_ESCAPE:
                     return 0x1B;
-                case SDLK_BACKSPACE: /* Backspace */
+                case SDLK_BACKSPACE:
                     return 0x08;
-                case SDLK_TAB:    /* TAB */
+                case SDLK_TAB:
                     return 0x09;
-                case SDLK_RETURN: /* ENTER */
+                case SDLK_RETURN:
                     return 0x0D;
-                case SDLK_F1:     /* F1 */
+                case SDLK_F1:
                     return 0x13B;
-                case SDLK_F2:     /* F2 */
+                case SDLK_F2:
                     return 0x13C;
-                case SDLK_F3:     /* F3 */
+                case SDLK_F3:
                     return 0x13D;
-                case SDLK_F4:     /* F4 */
+                case SDLK_F4:
                     return 0x13E;
-                case SDLK_F5:     /* F5 */
+                case SDLK_F5:
                     return 0x13F;
-                case SDLK_F6:     /* F6 */
+                case SDLK_F6:
                     return 0x140;
-                case SDLK_F7:     /* F7 */
+                case SDLK_F7:
                     return 0x141;
-                case SDLK_F8:     /* F8 */
+                case SDLK_F8:
                     return 0x142;
-                case SDLK_F9:     /* F9 */
+                case SDLK_F9:
                     return 0x143;
-                case SDLK_F10:    /* F10 */
+                case SDLK_F10:
                     return 0x144;
-                case SDLK_HOME:   /* HOME */
+                case SDLK_HOME:
                     return 0x147;
-                case SDLK_UP:     /* UP */
+                case SDLK_UP:
                     return 0x148;
-                case SDLK_PAGEUP: /* PGUP */
+                case SDLK_PAGEUP:
                     return 0x149;
-                case SDLK_LEFT:   /* LEFT */
+                case SDLK_LEFT:
                     return 0x14B;
-                case SDLK_RIGHT:  /* RIGHT */
+                case SDLK_RIGHT:
                     return 0x14D;
-                case SDLK_END:    /* END */
+                case SDLK_END:
                     return 0x14F;
-                case SDLK_DOWN:   /* DOWN */
+                case SDLK_DOWN:
                     return 0x150;
-                case SDLK_PAGEDOWN: /* PGDOWN */
+                case SDLK_PAGEDOWN:
                     return 0x151;
-                case SDLK_DELETE: /* DEL */
+                case SDLK_DELETE:
                     return 0x153;
                 default: /* ignore anything else, unless it's classic ascii */
                     if (event.key.keysym.unicode < 127) {
@@ -195,7 +195,7 @@ int ui_getkey()
         } else {
             break;
         }
-    } /* for (;;) */
+    }
 
     return 0x00; /* unknown key */
 }

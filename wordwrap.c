@@ -4,7 +4,7 @@
  */
 
 #include <stdlib.h>    /* NULL */
-#include "wordwrap.h"  /* include self for control */
+#include "wordwrap.h"
 
 /* fills *line with part or totality of original *str and return a pointer of *str where to start next iteration */
 char *wordwrap(char *str, char *line, int width)

@@ -5,7 +5,7 @@
 
 #include <stdlib.h>  /* malloc(), NULL */
 #include <string.h>  /* strcasecmp(), ... */
-#include "history.h" /* include self for control and type declaration */
+#include "history.h"
 
 #define MAXALLOWEDCACHE 1024*1024*2
 
