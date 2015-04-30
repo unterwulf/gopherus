@@ -276,21 +276,19 @@ int edit_url(struct historytype **history, struct gopherusconfig *cfg)
 }
 
 /* Asks for a confirmation to quit. Returns 0 if Quit aborted, non-zero otherwise. */
-int askQuitConfirmation(struct gopherusconfig *cfg)
+int ask_quit_confirmation(struct gopherusconfig *cfg)
 {
-    char confirm[80];
     int keypress;
-    strcpy(confirm, "!YOU ARE ABOUT TO QUIT. PRESS ESC TO CONFIRM, OR ANY OTHER KEY TO ABORT.");
-    draw_statusbar(confirm, cfg);
+    char msg[] =
+        "!YOU ARE ABOUT TO QUIT. PRESS ESC TO CONFIRM, OR ANY OTHER KEY TO ABORT.";
 
-    while ((keypress = ui_getkey()) == 0x00)
-        ; /* fetch the next recognized keypress */
+    draw_statusbar(msg, cfg);
 
-    if ((keypress == 0x1B) || (keypress == 0xFF)) {
-        return 1;
-    } else {
-        return 0;
-    }
+    do {
+        keypress = ui_getkey(); /* fetch the next recognized keypress */
+    } while (keypress == 0x00);
+
+    return ((keypress == 0x1B) || (keypress == 0xFF));
 }
 
 /* used by display_menu to tell whether an itemtype is selectable or not */
@@ -544,7 +542,7 @@ int display_menu(struct historytype **history, struct gopherusconfig *cfg, char 
                 }
                 break;
             case 0x1B: /* Esc */
-                if (askQuitConfirmation(cfg) != 0) return DISPLAY_ORDER_QUIT;
+                if (ask_quit_confirmation(cfg) != 0) return DISPLAY_ORDER_QUIT;
                 break;
             case 0x13B: /* F1 - help */
                 history_add(history, PARSEURL_PROTO_GOPHER, "#manual", 70, '0', "");
@@ -751,7 +749,7 @@ int display_text(struct historytype **history, struct gopherusconfig *cfg, char 
                 if (edit_url(history, cfg) == 0) return DISPLAY_ORDER_NONE;
                 break;
             case 0x1B:   /* ESC */
-                if (askQuitConfirmation(cfg) != 0) return DISPLAY_ORDER_QUIT;
+                if (ask_quit_confirmation(cfg) != 0) return DISPLAY_ORDER_QUIT;
                 break;
             case 0x13B: /* F1 - help */
                 history_add(history, PARSEURL_PROTO_GOPHER, "#manual", 70, '0', "");
