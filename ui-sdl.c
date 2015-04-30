@@ -8,6 +8,7 @@
  */
 
 #include <SDL/SDL.h>
+#include "common.h"
 #include "ui.h"
 #include "ascii.h" /* ascii fonts */
 
@@ -120,15 +121,15 @@ int ui_getkey(void)
         if (event.type == SDL_KEYDOWN) { /* I'm only interested in key presses */
             switch (event.key.keysym.sym) {
                 case SDLK_ESCAPE:
-                    return 0x1B;
+                    return KEY_ESCAPE;
                 case SDLK_BACKSPACE:
-                    return 0x08;
+                    return KEY_BACKSPACE;
                 case SDLK_TAB:
-                    return 0x09;
+                    return KEY_TAB;
                 case SDLK_RETURN:
-                    return 0x0D;
+                    return KEY_ENTER;
                 case SDLK_F1:
-                    return 0x13B;
+                    return KEY_F1;
                 case SDLK_F2:
                     return 0x13C;
                 case SDLK_F3:
@@ -136,7 +137,7 @@ int ui_getkey(void)
                 case SDLK_F4:
                     return 0x13E;
                 case SDLK_F5:
-                    return 0x13F;
+                    return KEY_F5;
                 case SDLK_F6:
                     return 0x140;
                 case SDLK_F7:
@@ -144,27 +145,27 @@ int ui_getkey(void)
                 case SDLK_F8:
                     return 0x142;
                 case SDLK_F9:
-                    return 0x143;
+                    return KEY_F9;
                 case SDLK_F10:
                     return 0x144;
                 case SDLK_HOME:
-                    return 0x147;
+                    return KEY_HOME;
                 case SDLK_UP:
-                    return 0x148;
+                    return KEY_UP;
                 case SDLK_PAGEUP:
-                    return 0x149;
+                    return KEY_PAGEUP;
                 case SDLK_LEFT:
-                    return 0x14B;
+                    return KEY_LEFT;
                 case SDLK_RIGHT:
-                    return 0x14D;
+                    return KEY_RIGHT;
                 case SDLK_END:
-                    return 0x14F;
+                    return KEY_END;
                 case SDLK_DOWN:
-                    return 0x150;
+                    return KEY_DOWN;
                 case SDLK_PAGEDOWN:
-                    return 0x151;
+                    return KEY_PAGEDOWN;
                 case SDLK_DELETE:
-                    return 0x153;
+                    return KEY_DELETE;
                 default: /* ignore anything else, unless it's classic ascii */
                     if (event.key.keysym.unicode < 127) {
                         if ((event.key.keysym.mod & KMOD_ALT) != 0) {

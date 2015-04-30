@@ -40,6 +40,24 @@
 #define TXT_FORMAT_RAW 0
 #define TXT_FORMAT_HTM 1
 
+#define KEY_BACKSPACE  0x08
+#define KEY_TAB        0x09
+#define KEY_ENTER      0x0D
+#define KEY_ESCAPE     0x1B
+#define KEY_F1         0x13B
+#define KEY_F5         0x13F
+#define KEY_F9         0x143
+#define KEY_HOME       0x147
+#define KEY_UP         0x148
+#define KEY_PAGEUP     0x149
+#define KEY_LEFT       0x14B
+#define KEY_RIGHT      0x14D
+#define KEY_END        0x14F
+#define KEY_DOWN       0x150
+#define KEY_PAGEDOWN   0x151
+#define KEY_DELETE     0x153
+#define KEY_QUIT       0xFF
+
 struct gopherusconfig {
     int attr_textnorm;
     int attr_menucurrent;
@@ -202,35 +220,36 @@ int editstring(char *url, int maxlen, int maxdisplaylen, int xx, int yy, int att
             }
         }
         presskey = ui_getkey();
-        if ((presskey == 0x1B) || (presskey == 0x09)) { /* ESC or TAB */
+
+        if ((presskey == KEY_ESCAPE) || (presskey == KEY_TAB)) {
             result = 0;
             break;
-        } else if (presskey == 0x147) { /* HOME */
+        } else if (presskey == KEY_HOME) {
             cursorpos = 0;
-        } else if (presskey == 0x14F) { /* END */
+        } else if (presskey == KEY_END) {
             cursorpos = urllen;
-        } else if (presskey == 0x0D) { /* ENTER */
+        } else if (presskey == KEY_ENTER) {
             url[urllen] = 0; /* terminate the URL string with a NULL terminator */
             result = -1;
             break;
-        } else if (presskey == 0x14B) { /* LEFT */
+        } else if (presskey == KEY_LEFT) {
             if (cursorpos > 0) cursorpos -= 1;
-        } else if (presskey == 0x14D) { /* RIGHT */
+        } else if (presskey == KEY_RIGHT) {
             if (cursorpos < urllen) cursorpos += 1;
-        } else if (presskey == 0x08) { /* BACKSPACE */
+        } else if (presskey == KEY_BACKSPACE) {
             if (cursorpos > 0) {
                 int y;
                 urllen -= 1;
                 cursorpos -= 1;
                 for (y = cursorpos; y < urllen; y++) url[y] = url[y + 1];
             }
-        } else if (presskey == 0x153) { /* DEL */
+        } else if (presskey == KEY_DELETE) {
             if (cursorpos < urllen) {
                 int y;
                 for (y = cursorpos; y < urllen; y++) url[y] = url[y+1];
                 urllen -= 1;
             }
-        } else if (presskey == 0xFF) { /* QUIT */
+        } else if (presskey == KEY_QUIT) {
             result = 0;
             break;
         } else if ((presskey > 0x1F) && (presskey < 127)) {
@@ -286,7 +305,7 @@ int ask_quit_confirmation(struct gopherusconfig *cfg)
         keypress = ui_getkey(); /* fetch the next recognized keypress */
     } while (keypress == 0x00);
 
-    return ((keypress == 0x1B) || (keypress == 0xFF));
+    return ((keypress == KEY_ESCAPE) || (keypress == KEY_QUIT));
 }
 
 /* used by display_menu to tell whether an itemtype is selectable or not */
@@ -498,16 +517,16 @@ int display_menu(struct historytype **history, struct gopherusconfig *cfg, char 
         keypress = ui_getkey();
 
         switch (keypress) {
-            case 0x08: /* BACKSPACE */
+            case KEY_BACKSPACE:
                 return DISPLAY_ORDER_BACK;
                 break;
-            case 0x09: /* TAB */
+            case KEY_TAB:
                 if (edit_url(history, cfg) == 0) return DISPLAY_ORDER_NONE;
                 break;
-            case 0x143: /* F9 */
-            case 0x0D: /* ENTER */
+            case KEY_F9:
+            case KEY_ENTER:
                 if (*selectedline >= 0) {
-                    if ((line_itemtype[*selectedline] == '7') && (keypress != 0x143)) { /* a query needs to be issued */
+                    if ((line_itemtype[*selectedline] == '7') && (keypress != KEY_F9)) { /* a query needs to be issued */
                         char query[64];
                         char *finalselector;
                         sprintf(query, "Enter a query: ");
@@ -528,7 +547,7 @@ int display_menu(struct historytype **history, struct gopherusconfig *cfg, char 
                         int tmpproto, tmpport;
                         char tmphost[512], tmpitemtype, tmpselector[512];
                         tmpproto = parsegopherurl(curURL, tmphost, &tmpport, &tmpitemtype, tmpselector);
-                        if (keypress == 0x143) tmpitemtype = '9'; /* force the itemtype to 'binary' if 'save as' was requested */
+                        if (keypress == KEY_F9) tmpitemtype = '9'; /* force the itemtype to 'binary' if 'save as' was requested */
                         if (tmpproto < 0) {
                             set_statusbar(statusbar, "!Unknown protocol");
                             break;
@@ -539,21 +558,21 @@ int display_menu(struct historytype **history, struct gopherusconfig *cfg, char 
                     }
                 }
                 break;
-            case 0x1B: /* Esc */
+            case KEY_ESCAPE:
                 if (ask_quit_confirmation(cfg) != 0) return DISPLAY_ORDER_QUIT;
                 break;
-            case 0x13B: /* F1 - help */
+            case KEY_F1: /* help */
                 history_add(history, PARSEURL_PROTO_GOPHER, "#manual", 70, '0', "");
                 return DISPLAY_ORDER_NONE;
                 break;
-            case 0x13F: /* F5 - refresh */
+            case KEY_F5: /* refresh */
                 return DISPLAY_ORDER_REFR;
                 break;
-            case 0x147: /* HOME */
+            case KEY_HOME:
                 if (*selectedline >= 0) *selectedline = firstlinkline;
                 *screenlineoffset = 0;
                 break;
-            case 0x148: /* UP */
+            case KEY_UP:
                 if (*selectedline > firstlinkline) {
                     while (isitemtypeselectable(line_itemtype[--(*selectedline)]) == 0); /* select the next item that is selectable */
                 } else {
@@ -561,18 +580,18 @@ int display_menu(struct historytype **history, struct gopherusconfig *cfg, char 
                     continue; /* do not force the selected line to be on screen */
                 }
                 break;
-            case 0x149: /* PGUP */
+            case KEY_PAGEUP:
                 if (*selectedline >= 0) {
                     *selectedline -= (ui_getrowcount() - 3);
                     if (*selectedline < firstlinkline) *selectedline = firstlinkline;
                 }
                 break;
-            case 0x14F: /* END */
+            case KEY_END:
                 if (*selectedline >= 0) *selectedline = lastlinkline;
                 *screenlineoffset = linecount - (ui_getrowcount() - 3);
                 if (*screenlineoffset < 0) *screenlineoffset = 0;
                 break;
-            case 0x150: /* DOWN */
+            case KEY_DOWN:
                 if (*selectedline > *screenlineoffset + ui_getrowcount() - 3) { /* if selected line is below the screen, don't change the selection */
                     *screenlineoffset += 1;
                     continue;
@@ -584,13 +603,13 @@ int display_menu(struct historytype **history, struct gopherusconfig *cfg, char 
                     continue; /* do not force the selected line to be on screen */
                 }
                 break;
-            case 0x151: /* PGDOWN */
+            case KEY_PAGEDOWN:
                 if (*selectedline >= 0) {
                     *selectedline += (ui_getrowcount() - 3);
                     if (*selectedline > lastlinkline) *selectedline = lastlinkline;
                 }
                 break;
-            case 0xFF:  /* 0xFF -> quit immediately */
+            case KEY_QUIT: /* quit immediately */
                 return 1;
                 break;
             default:
@@ -740,27 +759,27 @@ int display_text(struct historytype **history, struct gopherusconfig *cfg, char 
         draw_statusbar(statusbar, cfg);
         x = ui_getkey();
         switch (x) {
-            case 0x08:   /* Backspace */
+            case KEY_BACKSPACE:
                 return DISPLAY_ORDER_BACK;
                 break;
-            case 0x09: /* TAB */
+            case KEY_TAB:
                 if (edit_url(history, cfg) == 0) return DISPLAY_ORDER_NONE;
                 break;
-            case 0x1B:   /* ESC */
+            case KEY_ESCAPE:
                 if (ask_quit_confirmation(cfg) != 0) return DISPLAY_ORDER_QUIT;
                 break;
-            case 0x13B: /* F1 - help */
+            case KEY_F1: /* help */
                 history_add(history, PARSEURL_PROTO_GOPHER, "#manual", 70, '0', "");
                 return DISPLAY_ORDER_NONE;
                 break;
-            case 0x13F: /* F5 - refresh */
+            case KEY_F5: /* refresh */
                 return DISPLAY_ORDER_REFR;
                 break;
-            case 0x143: /* F9 - download */
+            case KEY_F9: /* download */
                 history_add(history, (*history)->protocol, (*history)->host, (*history)->port, '9', (*history)->selector);
                 return DISPLAY_ORDER_NONE;
                 break;
-            case 0x148: /* UP */
+            case KEY_UP:
                 if (firstline > 0) {
                     firstline -= 1;
                     lastline -= 1;
@@ -768,7 +787,7 @@ int display_text(struct historytype **history, struct gopherusconfig *cfg, char 
                     set_statusbar(statusbar, "Reached the top of the file");
                 }
                 break;
-            case 0x150: /* DOWN */
+            case KEY_DOWN:
                 if (eof_flag == 0) {
                     firstline += 1;
                     lastline += 1;
@@ -776,11 +795,11 @@ int display_text(struct historytype **history, struct gopherusconfig *cfg, char 
                     set_statusbar(statusbar, "Reached end of file");
                 }
                 break;
-            case 0x147: /* HOME */
+            case KEY_HOME:
                 lastline -= firstline;
                 firstline = 0;
                 break;
-            case 0x149: /* PGUP */
+            case KEY_PAGEUP:
                 if (firstline > 0) {
                     firstline -= ui_getrowcount() - 3;
                     if (firstline < 0) firstline = 0;
@@ -789,9 +808,9 @@ int display_text(struct historytype **history, struct gopherusconfig *cfg, char 
                     set_statusbar(statusbar, "Reached the top of the file");
                 }
                 break;
-            case 0x14F: /* END */
+            case KEY_END:
                 break;
-            case 0x151: /* PGDOWN */
+            case KEY_PAGEDOWN:
                 if (eof_flag == 0) {
                     firstline += ui_getrowcount() - 3;
                     lastline += ui_getrowcount() - 3;
@@ -799,7 +818,7 @@ int display_text(struct historytype **history, struct gopherusconfig *cfg, char 
                     set_statusbar(statusbar, "Reached end of file");
                 }
                 break;
-            case 0xFF: /* QUIT IMMEDIATELY */
+            case KEY_QUIT: /* QUIT IMMEDIATELY */
                 return 1;
                 break;
             default:  /* unhandled key */
@@ -904,7 +923,7 @@ long loadfile_buff(int protocol, char *hostaddr, unsigned int hostport, char *se
         if (byteread < 0) break; /* end of connection */
         if (ui_kbhit() != 0) { /* a key has been pressed - read it */
             int presskey = ui_getkey();
-            if ((presskey == 0x1B) || (presskey == 0x08)) { /* if it's escape or backspace, abort the connection */
+            if ((presskey == KEY_ESCAPE) || (presskey == KEY_BACKSPACE)) { /* if it's escape or backspace, abort the connection */
                 set_statusbar(statusbar, "Connection aborted by the user.");
                 reslength = -1;
                 break;
