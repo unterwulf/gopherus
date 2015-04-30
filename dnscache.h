@@ -3,7 +3,6 @@
  * Copyright (C) Mateusz Viste 2013
  */
 
-
 #ifndef DNSCACHE_H
 #define DNSCACHE_H
 

@@ -9,54 +9,54 @@
 
 #include <conio.h>
 #include <pc.h>    /* ScreenRows() */
-
 #include "ui.h"  /* include self for control */
 
-int ui_getrowcount() {
- return(ScreenRows());
+int ui_getrowcount()
+{
+    return ScreenRows();
 }
 
-
-int ui_getcolcount() {
- return(ScreenCols());
+int ui_getcolcount()
+{
+    return ScreenCols();
 }
 
-
-void ui_cls() {
-  clrscr();
+void ui_cls()
+{
+    clrscr();
 }
 
-
-void ui_puts(char *str) {
-  cprintf("%s\r\n", str);
+void ui_puts(char *str)
+{
+    cprintf("%s\r\n", str);
 }
 
-
-void ui_locate(int y, int x) {
-  ScreenSetCursor(y, x);
+void ui_locate(int y, int x)
+{
+    ScreenSetCursor(y, x);
 }
 
-
-void ui_putchar(char c, int attr, int x, int y) {
-  ScreenPutChar(c, attr, x, y);
+void ui_putchar(char c, int attr, int x, int y)
+{
+    ScreenPutChar(c, attr, x, y);
 }
 
-
-int ui_getkey() {
-  return(getkey());
+int ui_getkey()
+{
+    return getkey();
 }
 
-
-int ui_kbhit() {
-  return(kbhit());
+int ui_kbhit()
+{
+    return kbhit();
 }
 
-
-void ui_cursor_show() {
-  _setcursortype(_NORMALCURSOR);
+void ui_cursor_show()
+{
+    _setcursortype(_NORMALCURSOR);
 }
 
-
-void ui_cursor_hide() {
-  _setcursortype(_NOCURSOR);
+void ui_cursor_hide()
+{
+    _setcursortype(_NOCURSOR);
 }

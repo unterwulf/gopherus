@@ -16,208 +16,225 @@ static SDL_Surface *screen;
 static int cursorstate = 1;
 
 /* This function has been borrowed from the SDL documentation */
-static void putpixel(SDL_Surface *surface, int x, int y, Uint32 pixel) {
-  int bpp = surface->format->BytesPerPixel;
-  /* Here p is the address to the pixel we want to set */
-  Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
-  switch(bpp) {
-    case 1:
-      *p = pixel;
-      break;
-    case 2:
-      *(Uint16 *)p = pixel;
-      break;
-    case 3:
-      if(SDL_BYTEORDER == SDL_BIG_ENDIAN) {
-          p[0] = (pixel >> 16) & 0xff;
-          p[1] = (pixel >> 8) & 0xff;
-          p[2] = pixel & 0xff;
-        } else {
-          p[0] = pixel & 0xff;
-          p[1] = (pixel >> 8) & 0xff;
-          p[2] = (pixel >> 16) & 0xff;
-      }
-      break;
-    case 4:
-      *(Uint32 *)p = pixel;
-      break;
-  }
-}
+static void putpixel(SDL_Surface *surface, int x, int y, Uint32 pixel)
+{
+    int bpp = surface->format->BytesPerPixel;
+    /* Here p is the address to the pixel we want to set */
+    Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
 
-
-static void initsdl() {
-  SDL_Init(SDL_INIT_VIDEO);
-  screen = SDL_SetVideoMode(640, 480, 32, 0);
-  SDL_WM_SetCaption("Gopherus", NULL);
-  sdlinited = 1;
-  SDL_EnableKeyRepeat(800, 80); /* enable repeating keys */
-  SDL_EnableUNICODE(1);  /* using the SDL unicode support actually for getting ASCII */
-  atexit(SDL_Quit); /* clean up at exit time */
-}
-
-
-int ui_getrowcount() {
- return(30);
-}
-
-
-int ui_getcolcount() {
- return(80);
-}
-
-
-void ui_cls() {
-  if (sdlinited == 0) initsdl();
-  SDL_FillRect(screen, NULL, 0);
-  SDL_Flip(screen);
-}
-
-
-void ui_puts(char *str) {
-  if (sdlinited == 0) initsdl();
-  puts(str);
-}
-
-
-void ui_locate(int y, int x) {
-  cursorx = x;
-  cursory = y;
-}
-
-
-void ui_putchar(char c, int attr, int x, int y) {
-  int xx, yy;
-  const long attrpal[16] = {0x000000l, 0x0000AAl, 0x00AA00l, 0x00AAAAl, 0xAA0000l, 0xAA00AAl, 0xAA5500l, 0xAAAAAAl, 0x555555l, 0x5555FFl, 0x55FF55l, 0x55FFFFl, 0xFF5555l, 0xFF55FFl, 0xFFFF55l, 0xFFFFFFl};
-  if (sdlinited == 0) initsdl();
-  for (yy = 0; yy < 16; yy++) {
-    for (xx = 0; xx < 8; xx++) {
-      if ((ascii_font[((unsigned)c << 4) + yy] & (1 << xx)) != 0) {
-          putpixel(screen, (x << 3) + 7 - xx, (y << 4) + yy, attrpal[attr & 0x0F]);
-        } else {
-          putpixel(screen, (x << 3) + 7 - xx, (y << 4) + yy, attrpal[attr >> 4]);
-      }
-    }
-  }
-  /* draw a cursor over if cursor is enabled and position is right.. this is really clumsy, but it works for now... */
-  if ((cursorstate != 0) && (cursorx == x) && (cursory == y)) {
-    for (yy = 0; yy < 16; yy++) {
-      for (xx = 0; xx < 8; xx++) {
-        if ((ascii_font[('_' << 4) + yy] & (1 << xx)) != 0) {
-          putpixel(screen, (x << 3) + 7 - xx, (y << 4) + yy, attrpal[attr & 0x0F]);
-        }
-      }
-    }
-  }
-  /* tell SDL to update the character's area on screen */
-  SDL_UpdateRect(screen, (x << 3), (y << 4), 8, 16);
-}
-
-
-
-
-int ui_getkey() {
-  SDL_Event event;
-  if (sdlinited == 0) initsdl();
-  for (;;) {
-    if (SDL_WaitEvent(&event) == 0) return(0); /* block until an event is received */
-    if (event.type == SDL_KEYDOWN) { /* I'm only interested in key presses */
-        switch (event.key.keysym.sym) {
-          case SDLK_ESCAPE: /* Escape */
-            return(0x1B);
-          case SDLK_BACKSPACE: /* Backspace */
-            return(0x08);
-          case SDLK_TAB:    /* TAB */
-            return(0x09);
-          case SDLK_RETURN: /* ENTER */
-            return(0x0D);
-          case SDLK_F1:     /* F1 */
-            return(0x13B);
-          case SDLK_F2:     /* F2 */
-            return(0x13C);
-          case SDLK_F3:     /* F3 */
-            return(0x13D);
-          case SDLK_F4:     /* F4 */
-            return(0x13E);
-          case SDLK_F5:     /* F5 */
-            return(0x13F);
-          case SDLK_F6:     /* F6 */
-            return(0x140);
-          case SDLK_F7:     /* F7 */
-            return(0x141);
-          case SDLK_F8:     /* F8 */
-            return(0x142);
-          case SDLK_F9:     /* F9 */
-            return(0x143);
-          case SDLK_F10:    /* F10 */
-            return(0x144);
-          case SDLK_HOME:   /* HOME */
-            return(0x147);
-          case SDLK_UP:     /* UP */
-            return(0x148);
-          case SDLK_PAGEUP: /* PGUP */
-            return(0x149);
-          case SDLK_LEFT:   /* LEFT */
-            return(0x14B);
-          case SDLK_RIGHT:  /* RIGHT */
-            return(0x14D);
-          case SDLK_END:    /* END */
-            return(0x14F);
-          case SDLK_DOWN:   /* DOWN */
-            return(0x150);
-          case SDLK_PAGEDOWN: /* PGDOWN */
-            return(0x151);
-          case SDLK_DELETE: /* DEL */
-            return(0x153);
-          default: /* ignore anything else, unless it's classic ascii */
-            if (event.key.keysym.unicode < 127) {
-              if ((event.key.keysym.mod & KMOD_ALT) != 0) {
-                  return(0x100 | event.key.keysym.unicode);
-                } else {
-                  return(event.key.keysym.unicode);
-              }
+    switch (bpp) {
+        case 1:
+            *p = pixel;
+            break;
+        case 2:
+            *(Uint16 *)p = pixel;
+            break;
+        case 3:
+            if(SDL_BYTEORDER == SDL_BIG_ENDIAN) {
+                p[0] = (pixel >> 16) & 0xff;
+                p[1] = (pixel >> 8) & 0xff;
+                p[2] = pixel & 0xff;
+            } else {
+                p[0] = pixel & 0xff;
+                p[1] = (pixel >> 8) & 0xff;
+                p[2] = (pixel >> 16) & 0xff;
             }
             break;
-        }
-      } else if (event.type == SDL_QUIT) {
-        return(0xFF);
-      } else if (event.type == SDL_KEYUP) { /* silently drop all key up events */
-        continue;
-      } else {
-        break;
+        case 4:
+            *(Uint32 *)p = pixel;
+            break;
     }
-  } /* for (;;) */
-  return(0x00); /* unknown key */
 }
 
-
-static void flushKeyUpEvents() {
-  int res;
-  SDL_Event event;
-  for (;;) { /* silently flush all possible 'KEY UP' events */
-    SDL_PumpEvents();
-    res = SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENTMASK(SDL_KEYUP));
-    if (res < 1) return;
-  }
+static void initsdl()
+{
+    SDL_Init(SDL_INIT_VIDEO);
+    screen = SDL_SetVideoMode(640, 480, 32, 0);
+    SDL_WM_SetCaption("Gopherus", NULL);
+    sdlinited = 1;
+    SDL_EnableKeyRepeat(800, 80); /* enable repeating keys */
+    SDL_EnableUNICODE(1);  /* using the SDL unicode support actually for getting ASCII */
+    atexit(SDL_Quit); /* clean up at exit time */
 }
 
-
-int ui_kbhit() {
-  int res;
-  if (sdlinited == 0) initsdl();
-  flushKeyUpEvents();  /* silently flush all possible 'KEY UP' events */
-  res = SDL_PollEvent(NULL);
-  if (res < 0) return(0);
-  return(res);
+int ui_getrowcount()
+{
+    return 30;
 }
 
-
-void ui_cursor_show() {
-  if (sdlinited == 0) initsdl();
-  cursorstate = 1;
+int ui_getcolcount()
+{
+    return 80;
 }
 
+void ui_cls()
+{
+    if (sdlinited == 0)
+        initsdl();
 
-void ui_cursor_hide() {
-  if (sdlinited == 0) initsdl();
-  cursorstate = 0;
+    SDL_FillRect(screen, NULL, 0);
+    SDL_Flip(screen);
+}
+
+void ui_puts(char *str)
+{
+    if (sdlinited == 0)
+        initsdl();
+
+    puts(str);
+}
+
+void ui_locate(int y, int x)
+{
+    cursorx = x;
+    cursory = y;
+}
+
+void ui_putchar(char c, int attr, int x, int y)
+{
+    int xx, yy;
+    const long attrpal[16] = {0x000000l, 0x0000AAl, 0x00AA00l, 0x00AAAAl, 0xAA0000l, 0xAA00AAl, 0xAA5500l, 0xAAAAAAl, 0x555555l, 0x5555FFl, 0x55FF55l, 0x55FFFFl, 0xFF5555l, 0xFF55FFl, 0xFFFF55l, 0xFFFFFFl};
+
+    if (sdlinited == 0)
+        initsdl();
+
+    for (yy = 0; yy < 16; yy++) {
+        for (xx = 0; xx < 8; xx++) {
+            if ((ascii_font[((unsigned)c << 4) + yy] & (1 << xx)) != 0) {
+                putpixel(screen, (x << 3) + 7 - xx, (y << 4) + yy, attrpal[attr & 0x0F]);
+            } else {
+                putpixel(screen, (x << 3) + 7 - xx, (y << 4) + yy, attrpal[attr >> 4]);
+            }
+        }
+    }
+
+    /* draw a cursor over if cursor is enabled and position is right.. this is really clumsy, but it works for now... */
+    if ((cursorstate != 0) && (cursorx == x) && (cursory == y))
+        for (yy = 0; yy < 16; yy++)
+            for (xx = 0; xx < 8; xx++)
+                if ((ascii_font[('_' << 4) + yy] & (1 << xx)) != 0)
+                    putpixel(screen, (x << 3) + 7 - xx, (y << 4) + yy, attrpal[attr & 0x0F]);
+
+    /* tell SDL to update the character's area on screen */
+    SDL_UpdateRect(screen, (x << 3), (y << 4), 8, 16);
+}
+
+int ui_getkey()
+{
+    SDL_Event event;
+
+    if (sdlinited == 0)
+        initsdl();
+
+    for (;;) {
+        if (SDL_WaitEvent(&event) == 0)
+            return 0; /* block until an event is received */
+
+        if (event.type == SDL_KEYDOWN) { /* I'm only interested in key presses */
+            switch (event.key.keysym.sym) {
+                case SDLK_ESCAPE: /* Escape */
+                    return 0x1B;
+                case SDLK_BACKSPACE: /* Backspace */
+                    return 0x08;
+                case SDLK_TAB:    /* TAB */
+                    return 0x09;
+                case SDLK_RETURN: /* ENTER */
+                    return 0x0D;
+                case SDLK_F1:     /* F1 */
+                    return 0x13B;
+                case SDLK_F2:     /* F2 */
+                    return 0x13C;
+                case SDLK_F3:     /* F3 */
+                    return 0x13D;
+                case SDLK_F4:     /* F4 */
+                    return 0x13E;
+                case SDLK_F5:     /* F5 */
+                    return 0x13F;
+                case SDLK_F6:     /* F6 */
+                    return 0x140;
+                case SDLK_F7:     /* F7 */
+                    return 0x141;
+                case SDLK_F8:     /* F8 */
+                    return 0x142;
+                case SDLK_F9:     /* F9 */
+                    return 0x143;
+                case SDLK_F10:    /* F10 */
+                    return 0x144;
+                case SDLK_HOME:   /* HOME */
+                    return 0x147;
+                case SDLK_UP:     /* UP */
+                    return 0x148;
+                case SDLK_PAGEUP: /* PGUP */
+                    return 0x149;
+                case SDLK_LEFT:   /* LEFT */
+                    return 0x14B;
+                case SDLK_RIGHT:  /* RIGHT */
+                    return 0x14D;
+                case SDLK_END:    /* END */
+                    return 0x14F;
+                case SDLK_DOWN:   /* DOWN */
+                    return 0x150;
+                case SDLK_PAGEDOWN: /* PGDOWN */
+                    return 0x151;
+                case SDLK_DELETE: /* DEL */
+                    return 0x153;
+                default: /* ignore anything else, unless it's classic ascii */
+                    if (event.key.keysym.unicode < 127) {
+                        if ((event.key.keysym.mod & KMOD_ALT) != 0) {
+                            return 0x100 | event.key.keysym.unicode;
+                        } else {
+                            return event.key.keysym.unicode;
+                        }
+                    }
+                    break;
+            }
+        } else if (event.type == SDL_QUIT) {
+            return 0xFF;
+        } else if (event.type == SDL_KEYUP) { /* silently drop all key up events */
+            continue;
+        } else {
+            break;
+        }
+    } /* for (;;) */
+
+    return 0x00; /* unknown key */
+}
+
+static void flushKeyUpEvents()
+{
+    int res;
+    SDL_Event event;
+
+    for (;;) { /* silently flush all possible 'KEY UP' events */
+        SDL_PumpEvents();
+        res = SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENTMASK(SDL_KEYUP));
+        if (res < 1)
+            return;
+    }
+}
+
+int ui_kbhit()
+{
+    int res;
+
+    if (sdlinited == 0)
+        initsdl();
+    flushKeyUpEvents();  /* silently flush all possible 'KEY UP' events */
+    res = SDL_PollEvent(NULL);
+
+    return (res < 0) ? 0 : res;
+}
+
+void ui_cursor_show()
+{
+    if (sdlinited == 0)
+        initsdl();
+    cursorstate = 1;
+}
+
+void ui_cursor_hide()
+{
+    if (sdlinited == 0)
+        initsdl();
+    cursorstate = 0;
 }

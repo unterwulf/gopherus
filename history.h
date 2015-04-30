@@ -7,15 +7,15 @@
 #define HISTORY_H
 
 struct historytype {
-  long cachesize;
-  char *host;
-  char *selector;
-  char *cache;
-  struct historytype *next;
-  unsigned int port;
-  char protocol;
-  char itemtype;
-  int displaymemory[2];  /* used by some display plugins to remember how the item was displayed. this is always initialized to -1 values */
+    long cachesize;
+    char *host;
+    char *selector;
+    char *cache;
+    struct historytype *next;
+    unsigned int port;
+    char protocol;
+    char itemtype;
+    int displaymemory[2];  /* used by some display plugins to remember how the item was displayed. this is always initialized to -1 values */
 };
 
 /* remove the last visited page from history (goes back to the previous one) */

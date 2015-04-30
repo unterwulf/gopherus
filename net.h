@@ -3,14 +3,13 @@
  * Copyright (C) Mateusz Viste 2013
  */
 
-
 #ifndef NET_H
 #define NET_H
 
 struct net_tcpsocket {
-  void *sock;
-  char *buffer;
-  int buffersize;
+    void *sock;
+    char *buffer;
+    int buffersize;
 };
 
 /* this is a wrapper around the wattcp lookup_host(), but with a small integrated cache */
