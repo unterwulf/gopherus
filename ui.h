@@ -23,7 +23,7 @@ void ui_cls(void);
 void ui_puts(char *str);
 
 /* Set the position (zero-based) of the cursor on screen */
-void ui_locate(int y, int x);
+void ui_locate(int x, int y);
 
 /* Put a char directly on screen, without playing with the cursor. Coordinates are zero-based. */
 void ui_putchar(char c, int attr, int x, int y);

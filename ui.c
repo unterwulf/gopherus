@@ -36,7 +36,7 @@ void ui_puts(char *str)
     cprintf("%s\r\n", str);
 }
 
-void ui_locate(int y, int x)
+void ui_locate(int x, int y)
 {
     ScreenSetCursor(y, x);
 }

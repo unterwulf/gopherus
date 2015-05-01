@@ -77,7 +77,7 @@ void ui_puts(char *str)
     puts(str);
 }
 
-void ui_locate(int y, int x)
+void ui_locate(int x, int y)
 {
     cursorx = x;
     cursory = y;

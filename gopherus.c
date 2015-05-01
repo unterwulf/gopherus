@@ -195,7 +195,7 @@ int editstring(char *url, int maxlen, int maxdisplaylen, int xx, int yy, int att
             displayoffset = cursorpos - 8;
             if (displayoffset < 0) displayoffset = 0;
         }
-        ui_locate(yy, cursorpos + xx - displayoffset);
+        ui_locate(cursorpos + xx - displayoffset, yy);
         for (x = 0; x < maxdisplaylen; x++) {
             if ((x + displayoffset) < urllen) {
                 ui_putchar(url[x + displayoffset], attr, x+xx, yy);
