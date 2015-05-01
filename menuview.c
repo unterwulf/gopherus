@@ -26,7 +26,7 @@ static int isitemtypeselectable(char itemtype)
     }
 }
 
-int display_menu(struct historytype **history, struct gopherusconfig *cfg, char *buffer, char *statusbar)
+int display_menu(struct gopherus *g)
 {
     char *description, *cursor, *selector, *host, *port, itemtype;
     int endofline;
@@ -40,17 +40,17 @@ int display_menu(struct historytype **history, struct gopherusconfig *cfg, char 
     unsigned char line_description_len[1024];
     int linecount = 0, x, y, column;
     char singlelinebuf[128];
-    int *selectedline = &(*history)->displaymemory[0];
-    int *screenlineoffset = &(*history)->displaymemory[1];
+    int *selectedline = &(g->history->displaymemory[0]);
+    int *screenlineoffset = &(g->history->displaymemory[1]);
     int firstlinkline = -1, lastlinkline = -1, keypress;
     if (*screenlineoffset < 0) *screenlineoffset = 0;
     /* copy the history content into buffer - we need to do this because we'll perform changes on the data */
-    bufferlen = (*history)->cachesize;
-    memcpy(buffer, (*history)->cache, (*history)->cachesize);
-    buffer[bufferlen] = 0;
+    bufferlen = g->history->cachesize;
+    memcpy(g->buf, g->history->cache, g->history->cachesize);
+    g->buf[bufferlen] = 0;
     linecount = 0;
 
-    for (cursor = buffer; cursor < (buffer + bufferlen) ;) {
+    for (cursor = g->buf; cursor < (g->buf + bufferlen) ;) {
         itemtype = *cursor;
         cursor += 1;
         column = 0;
@@ -59,7 +59,7 @@ int display_menu(struct historytype **history, struct gopherusconfig *cfg, char 
         host = NULL;
         port = NULL;
         endofline = 0;
-        for (; cursor < (buffer + bufferlen); cursor += 1) { /* read the whole line */
+        for (; cursor < (g->buf + bufferlen); cursor += 1) { /* read the whole line */
             if (*cursor == '\r') continue; /* silently ignore CR chars */
             if ((*cursor == '\t') || (*cursor == '\n')) { /* delimiter */
                 if (*cursor == '\n') endofline = 1;
@@ -126,20 +126,20 @@ int display_menu(struct historytype **history, struct gopherusconfig *cfg, char 
         curURL[0] = 0;
         if (*selectedline >= 0) {   /* if any position is selected, print the url in status bar */
             buildgopherurl(curURL, 512, PARSEURL_PROTO_GOPHER, line_host[*selectedline], line_port[*selectedline], line_itemtype[*selectedline], line_selector[*selectedline]);
-            set_statusbar(statusbar, curURL);
+            set_statusbar(g->statusbar, curURL);
         }
         /* start drawing lines of the menu */
         for (x = *screenlineoffset; x < *screenlineoffset + (ui_getrowcount() - 2); x++) {
             if (x < linecount) {
                 int z, attr;
                 char *prefix = NULL;
-                attr = cfg->attr_menuselectable;
+                attr = g->cfg.attr_menuselectable;
                 if (x == *selectedline) { /* change the background if item is selected */
-                    attr = cfg->attr_menucurrent;
+                    attr = g->cfg.attr_menucurrent;
                     /* attr &= 0x0F;
                        attr |= 0x20; */
                 } else {
-                    attr = cfg->attr_menutype;
+                    attr = g->cfg.attr_menutype;
                 }
                 switch (line_itemtype[x]) {
                     case 'i': /* message */
@@ -187,19 +187,19 @@ int display_menu(struct historytype **history, struct gopherusconfig *cfg, char 
                 /* attr &= 0xF0; */
                 if (x == *selectedline) {
                     /* attr |= 0x00; */
-                    attr = cfg->attr_menucurrent;
+                    attr = g->cfg.attr_menucurrent;
                 } else if (line_itemtype[x] == 'i') {
                     /* attr |= 0x07; */
-                    attr = cfg->attr_textnorm;
+                    attr = g->cfg.attr_textnorm;
                 } else if (line_itemtype[x] == '3') {
-                    attr = cfg->attr_menuerr;
+                    attr = g->cfg.attr_menuerr;
                     /* attr |= 0x04; */
                 } else {
                     if (isitemtypeselectable(line_itemtype[x]) != 0) {
-                        attr = cfg->attr_menuselectable;
+                        attr = g->cfg.attr_menuselectable;
                         /* attr |= 0x02; */
                     } else {
-                        attr = cfg->attr_textnorm;
+                        attr = g->cfg.attr_textnorm;
                         /* attr |= 0x08; */
                     }
                 }
@@ -212,11 +212,11 @@ int display_menu(struct historytype **history, struct gopherusconfig *cfg, char 
                     }
                 }
             } else { /* x >= linecount */
-                for (y = 0; y < 80; y++) ui_putchar(' ', cfg->attr_textnorm, y, 1 + (x - *screenlineoffset));
+                for (y = 0; y < 80; y++) ui_putchar(' ', g->cfg.attr_textnorm, y, 1 + (x - *screenlineoffset));
             }
         }
 
-        draw_statusbar(statusbar, cfg);
+        draw_statusbar(g->statusbar, &(g->cfg));
 
         /* wait for keypress */
         keypress = ui_getkey();
@@ -226,7 +226,7 @@ int display_menu(struct historytype **history, struct gopherusconfig *cfg, char 
                 return DISPLAY_ORDER_BACK;
                 break;
             case KEY_TAB:
-                if (edit_url(history, cfg) == 0) return DISPLAY_ORDER_NONE;
+                if (edit_url(&(g->history), &(g->cfg)) == 0) return DISPLAY_ORDER_NONE;
                 break;
             case KEY_F9:
             case KEY_ENTER:
@@ -235,16 +235,16 @@ int display_menu(struct historytype **history, struct gopherusconfig *cfg, char 
                         char query[64];
                         char *finalselector;
                         sprintf(query, "Enter a query: ");
-                        draw_statusbar(query, cfg);
+                        draw_statusbar(query, &(g->cfg));
                         query[0] = 0;
-                        if (editstring(query, 64, 64, 15, ui_getrowcount() - 1, cfg->attr_statusbarinfo) == 0) break;
+                        if (editstring(query, 64, 64, 15, ui_getrowcount() - 1, g->cfg.attr_statusbarinfo) == 0) break;
                         finalselector = malloc(strlen(line_selector[*selectedline]) + strlen(query) + 2); /* add 1 for the TAB, and 1 for the NULL terminator */
                         if (finalselector == NULL) {
-                            set_statusbar(statusbar, "Out of memory");
+                            set_statusbar(g->statusbar, "Out of memory");
                             break;
                         } else {
                             sprintf(finalselector, "%s\t%s", line_selector[*selectedline], query);
-                            history_add(history, PARSEURL_PROTO_GOPHER, line_host[*selectedline], line_port[*selectedline], line_itemtype[*selectedline], finalselector);
+                            history_add(&(g->history), PARSEURL_PROTO_GOPHER, line_host[*selectedline], line_port[*selectedline], line_itemtype[*selectedline], finalselector);
                             free(finalselector);
                             return DISPLAY_ORDER_NONE;
                         }
@@ -254,20 +254,20 @@ int display_menu(struct historytype **history, struct gopherusconfig *cfg, char 
                         tmpproto = parsegopherurl(curURL, tmphost, &tmpport, &tmpitemtype, tmpselector);
                         if (keypress == KEY_F9) tmpitemtype = '9'; /* force the itemtype to 'binary' if 'save as' was requested */
                         if (tmpproto < 0) {
-                            set_statusbar(statusbar, "!Unknown protocol");
+                            set_statusbar(g->statusbar, "!Unknown protocol");
                             break;
                         } else {
-                            history_add(history, tmpproto, tmphost, tmpport, tmpitemtype, tmpselector);
+                            history_add(&(g->history), tmpproto, tmphost, tmpport, tmpitemtype, tmpselector);
                             return DISPLAY_ORDER_NONE;
                         }
                     }
                 }
                 break;
             case KEY_ESCAPE:
-                if (ask_quit_confirmation(cfg) != 0) return DISPLAY_ORDER_QUIT;
+                if (ask_quit_confirmation(&(g->cfg)) != 0) return DISPLAY_ORDER_QUIT;
                 break;
             case KEY_F1: /* help */
-                history_add(history, PARSEURL_PROTO_GOPHER, "#manual", 70, '0', "");
+                history_add(&(g->history), PARSEURL_PROTO_GOPHER, "#manual", 70, '0', "");
                 return DISPLAY_ORDER_NONE;
                 break;
             case KEY_F5: /* refresh */
@@ -319,7 +319,7 @@ int display_menu(struct historytype **history, struct gopherusconfig *cfg, char 
                 break;
             default:
                 /* sprintf(singlelinebuf, "Got unknown key press: 0x%02X", keypress);
-                   set_statusbar(statusbar, singlelinebuf); */
+                   set_statusbar(g->statusbar, singlelinebuf); */
                 continue;
                 break;
         }

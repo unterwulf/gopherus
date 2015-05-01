@@ -7,8 +7,7 @@
 #define TEXTVIEW_H
 
 #include "common.h"
-#include "history.h"
 
-int display_text(struct historytype **history, struct gopherusconfig *cfg, char *buffer, char *statusbar, int txtformat);
+int display_text(struct gopherus *g, int txtformat);
 
 #endif

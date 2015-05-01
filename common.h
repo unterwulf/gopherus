@@ -46,6 +46,13 @@ struct gopherusconfig {
     int attr_urlbardeco;
 };
 
+struct gopherus {
+    char statusbar[128];
+    char *buf;
+    struct historytype *history;
+    struct gopherusconfig cfg;
+};
+
 void set_statusbar(char *buf, char *msg);
 
 void draw_urlbar(struct historytype *history, struct gopherusconfig *cfg);

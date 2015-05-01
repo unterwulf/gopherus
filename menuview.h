@@ -7,8 +7,7 @@
 #define MENUVIEW_H
 
 #include "common.h"
-#include "history.h"
 
-int display_menu(struct historytype **history, struct gopherusconfig *cfg, char *buffer, char *statusbar);
+int display_menu(struct gopherus *g);
 
 #endif

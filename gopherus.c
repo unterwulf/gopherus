@@ -273,24 +273,89 @@ static long loadfile_buff(int protocol, char *hostaddr, unsigned int hostport, c
     return reslength;
 }
 
-
 #define buffersize 1024*1024
+
+static void mainloop(struct gopherus *g)
+{
+    int exitflag;
+    int bufferlen;
+
+    for (;;) {
+        if ((g->history->itemtype == '0') || (g->history->itemtype == '1') || (g->history->itemtype == '7') || (g->history->itemtype == 'h')) { /* if it's a displayable item type... */
+            draw_urlbar(g->history, &g->cfg);
+
+            if (g->history->cache == NULL) { /* reload the resource if not in cache already */
+                bufferlen = loadfile_buff(g->history->protocol, g->history->host, g->history->port, g->history->selector, g->buf, buffersize, g->statusbar, NULL, &g->cfg);
+                if (bufferlen < 0) {
+                    history_back(&g->history);
+                    continue;
+                } else {
+                    history_cleanupcache(g->history);
+                    g->history->cache = malloc(bufferlen);
+                    if (g->history->cache == NULL) {
+                        sprintf(g->statusbar, "Out of memory!");
+                        exitflag = 1;
+                        break;
+                    }
+                    if (bufferlen > 0) memcpy(g->history->cache, g->buf, bufferlen);
+                    g->history->cachesize = bufferlen;
+                }
+            }
+
+            switch (g->history->itemtype) {
+                case '0': /* text file */
+                    exitflag = display_text(g, TXT_FORMAT_RAW);
+                    break;
+                case 'h': /* html file */
+                    exitflag = display_text(g, TXT_FORMAT_HTM);
+                    break;
+                case '1': /* menu */
+                case '7': /* query result (also a menu) */
+                    exitflag = display_menu(g);
+                    break;
+                default:
+                    set_statusbar(g->statusbar, "Fatal error: got an unhandled itemtype!");
+                    exitflag = DISPLAY_ORDER_QUIT;
+                    break;
+            }
+
+            if (exitflag == DISPLAY_ORDER_BACK) {
+                history_back(&(g->history));
+            } else if (exitflag == DISPLAY_ORDER_REFR) {
+                free(g->history->cache);
+                g->history->cache = NULL;
+                g->history->cachesize = 0;
+                g->history->displaymemory[0] = -1;
+                g->history->displaymemory[1] = -1;
+            } else if (exitflag == DISPLAY_ORDER_QUIT) {
+                break;
+            }
+        } else { /* the itemtype is not one of the internally displayable types -> ask to download it */
+            char filename[64] = {0};
+            const char *prompt = "Download as: ";
+            int i;
+            set_statusbar(filename, ""); /* make sure to clear out the status bar */
+            draw_statusbar(filename, &g->cfg);
+            for (i = 0; prompt[i] != 0; i++) ui_putchar(prompt[i], 0x70, i, ui_getrowcount() - 1);
+            if (editstring(filename, 63, 63, i, ui_getrowcount() - 1, 0x70) != 0) {
+                loadfile_buff(g->history->protocol, g->history->host, g->history->port, g->history->selector, g->buf, buffersize, g->statusbar, filename, &g->cfg);
+            }
+            history_back(&(g->history));
+        }
+    }
+}
 
 int main(int argc, char **argv)
 {
-    int exitflag;
-    char statusbar[128] = {0};
-    char *buffer;
-    int bufferlen;
-    struct historytype *history = NULL;
-    struct gopherusconfig cfg;
+    struct gopherus g;
+    memset(&g, '\0', sizeof g);
 
     /* Load configuration (or defaults) */
-    loadcfg(&cfg);
+    loadcfg(&g.cfg);
 
     ui_init();
 
-    if (history_add(&history, PARSEURL_PROTO_GOPHER, "#welcome", 70, '1', "") != 0) {
+    if (history_add(&g.history, PARSEURL_PROTO_GOPHER, "#welcome", 70, '1', "") != 0) {
         ui_puts("Out of memory.");
         return 2;
     }
@@ -320,17 +385,17 @@ int main(int argc, char **argv)
                 return 1;
             }
             goturl = 1;
-            history_add(&history, protocol, hostaddr, hostport, itemtype, selector);
-            if (history == NULL) {
+            history_add(&g.history, protocol, hostaddr, hostport, itemtype, selector);
+            if (g.history == NULL) {
                 ui_puts("Out of memory.");
                 return 2;
             }
         }
     }
 
-    buffer = malloc(buffersize);
+    g.buf = malloc(buffersize);
 
-    if (buffer == NULL) {
+    if (g.buf == NULL) {
         char message[128];
         sprintf(message, "Out of memory. Could not allocate buffer of %d bytes.", buffersize);
         ui_puts(message);
@@ -339,83 +404,25 @@ int main(int argc, char **argv)
 
     if (net_init() != 0) {
         ui_puts("Network subsystem initialization failed!");
-        free(buffer);
+        free(g.buf);
         return 3;
     }
 
     ui_cursor_hide();
     ui_cls();
 
-    for (;;) {
-        if ((history->itemtype == '0') || (history->itemtype == '1') || (history->itemtype == '7') || (history->itemtype == 'h')) { /* if it's a displayable item type... */
-            draw_urlbar(history, &cfg);
-            if (history->cache == NULL) { /* reload the resource if not in cache already */
-                bufferlen = loadfile_buff(history->protocol, history->host, history->port, history->selector, buffer, buffersize, statusbar, NULL, &cfg);
-                if (bufferlen < 0) {
-                    history_back(&history);
-                    continue;
-                } else {
-                    history_cleanupcache(history);
-                    history->cache = malloc(bufferlen);
-                    if (history->cache == NULL) {
-                        sprintf(statusbar, "Out of memory!");
-                        exitflag = 1;
-                        break;
-                    }
-                    if (bufferlen > 0) memcpy(history->cache, buffer, bufferlen);
-                    history->cachesize = bufferlen;
-                }
-            }
-            switch (history->itemtype) {
-                case '0': /* text file */
-                    exitflag = display_text(&history, &cfg, buffer, statusbar, TXT_FORMAT_RAW);
-                    break;
-                case 'h': /* html file */
-                    exitflag = display_text(&history, &cfg, buffer, statusbar, TXT_FORMAT_HTM);
-                    break;
-                case '1': /* menu */
-                case '7': /* query result (also a menu) */
-                    exitflag = display_menu(&history, &cfg, buffer, statusbar);
-                    break;
-                default:
-                    set_statusbar(statusbar, "Fatal error: got an unhandled itemtype!");
-                    exitflag = DISPLAY_ORDER_QUIT;
-                    break;
-            }
-            if (exitflag == DISPLAY_ORDER_BACK) {
-                history_back(&history);
-            } else if (exitflag == DISPLAY_ORDER_REFR) {
-                free(history->cache);
-                history->cache = NULL;
-                history->cachesize = 0;
-                history->displaymemory[0] = -1;
-                history->displaymemory[1] = -1;
-            } else if (exitflag == DISPLAY_ORDER_QUIT) {
-                break;
-            }
-        } else { /* the itemtype is not one of the internally displayable types -> ask to download it */
-            char filename[64] = {0};
-            const char *prompt = "Download as: ";
-            int i;
-            set_statusbar(filename, ""); /* make sure to clear out the status bar */
-            draw_statusbar(filename, &cfg);
-            for (i = 0; prompt[i] != 0; i++) ui_putchar(prompt[i], 0x70, i, ui_getrowcount() - 1);
-            if (editstring(filename, 63, 63, i, ui_getrowcount() - 1, 0x70) != 0) {
-                loadfile_buff(history->protocol, history->host, history->port, history->selector, buffer, buffersize, statusbar, filename, &cfg);
-            }
-            history_back(&history);
-        }
-    }
+    mainloop(&g);
 
-    ui_cursor_show();
     ui_cls();
+    ui_cursor_show();
 
-    if (statusbar[0] != 0)
-        ui_puts(statusbar); /* we might have here an error message to show */
+    if (g.statusbar[0] != 0)
+        ui_puts(g.statusbar); /* we might have here an error message to show */
 
     /* Free the main buffer */
-    free(buffer);
+    free(g.buf);
     /* unallocate all the history */
-    history_flush(history);
+    history_flush(g.history);
+
     return 0;
 }

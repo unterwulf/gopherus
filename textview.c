@@ -12,15 +12,15 @@
 #include "ui.h"
 #include "wordwrap.h"
 
-int display_text(struct historytype **history, struct gopherusconfig *cfg, char *buffer, char *statusbar, int txtformat)
+int display_text(struct gopherus *g, int txtformat)
 {
     char *txtptr;
     char linebuff[80];
     long x, y, firstline, lastline, bufferlen;
     int eof_flag;
-    sprintf(linebuff, "file loaded (%ld bytes)", (*history)->cachesize);
-    set_statusbar(statusbar, linebuff);
-    /* copy the content of the file into buffer, and take care to modify dangerous chars and apply formating (if any) */
+    sprintf(linebuff, "file loaded (%ld bytes)", g->history->cachesize);
+    set_statusbar(g->statusbar, linebuff);
+    /* copy the content of the file into g->buf, and take care to modify dangerous chars and apply formating (if any) */
     bufferlen = 0;
 
     if (txtformat == TXT_FORMAT_HTM) { /* HTML format */
@@ -30,9 +30,9 @@ int display_text(struct historytype **history, struct gopherusconfig *cfg, char 
         char token[8];
         char specialchar[8];
         int insidespecialchar = -1;
-        for (x = 0; x < (*history)->cachesize; x++) {
-            if ((insidescript != 0) && (insidetoken < 0) && ((*history)->cache[x] != '<')) continue;
-            switch ((*history)->cache[x]) {
+        for (x = 0; x < g->history->cachesize; x++) {
+            if ((insidescript != 0) && (insidetoken < 0) && (g->history->cache[x] != '<')) continue;
+            switch (g->history->cache[x]) {
                 case '\t':  /* replace whitespaces by single spaces */
                 case '\n':
                 case '\r':
@@ -42,7 +42,7 @@ int display_text(struct historytype **history, struct gopherusconfig *cfg, char 
                         continue;
                     }
                     if (lastcharwasaspace == 0) {
-                        buffer[bufferlen++] = ' ';
+                        g->buf[bufferlen++] = ' ';
                         lastcharwasaspace = 1;
                     }
                     break;
@@ -56,7 +56,7 @@ int display_text(struct historytype **history, struct gopherusconfig *cfg, char 
                     token[insidetoken] = 0;
                     insidetoken = -1;
                     if ((strcasecmp(token, "/p") == 0) || (strcasecmp(token, "br") == 0) || (strcasecmp(token, "/tr") == 0) || (strcasecmp(token, "/title") == 0)) {
-                        buffer[bufferlen++] = '\n';
+                        g->buf[bufferlen++] = '\n';
                     } else if (strcasecmp(token, "script") == 0) {
                         insidescript = 1;
                     } else if (strcasecmp(token, "/script") == 0) {
@@ -66,67 +66,67 @@ int display_text(struct historytype **history, struct gopherusconfig *cfg, char 
                 default:
                     lastcharwasaspace = 0;
                     if (insidetoken >= 0) {
-                        if (insidetoken < 7) token[insidetoken++] = (*history)->cache[x];
+                        if (insidetoken < 7) token[insidetoken++] = g->history->cache[x];
                         continue;
                     }
-                    if ((insidespecialchar < 0) && ((*history)->cache[x] == '&')) {
+                    if ((insidespecialchar < 0) && (g->history->cache[x] == '&')) {
                         insidespecialchar = 0;
                         continue;
                     }
                     if ((insidespecialchar >= 0) && (insidespecialchar < 7)) {
-                        if ((*history)->cache[x] != ';') {
-                            specialchar[insidespecialchar++] = (*history)->cache[x];
+                        if (g->history->cache[x] != ';') {
+                            specialchar[insidespecialchar++] = g->history->cache[x];
                             continue;
                         }
                         specialchar[insidespecialchar] = 0;
                         if (strcasecmp(specialchar, "nbsp") == 0) {
-                            buffer[bufferlen++] = ' ';
+                            g->buf[bufferlen++] = ' ';
                         } else {
-                            buffer[bufferlen++] = '_';
+                            g->buf[bufferlen++] = '_';
                         }
                         insidespecialchar = -1;
                         continue;
                     }
-                    if ((*history)->cache[x] < 32) break; /* ignore ascii control chars */
-                    buffer[bufferlen++] = (*history)->cache[x]; /* copy everything else */
+                    if (g->history->cache[x] < 32) break; /* ignore ascii control chars */
+                    g->buf[bufferlen++] = g->history->cache[x]; /* copy everything else */
                     break;
             }
         }
     } else { /* process content as raw text */
-        for (x = 0; x < (*history)->cachesize; x++) {
-            switch ((*history)->cache[x]) {
+        for (x = 0; x < g->history->cachesize; x++) {
+            switch (g->history->cache[x]) {
                 case 8:     /* replace tabs by 8 spaces */
-                    for (y = 0; y < 8; y++) buffer[bufferlen++] = ' ';
+                    for (y = 0; y < 8; y++) g->buf[bufferlen++] = ' ';
                     break;
                 case '\n':  /* preserve line feeds */
-                    buffer[bufferlen++] = '\n';
+                    g->buf[bufferlen++] = '\n';
                     break;
                 case '\r':  /* ignore CR chars */
                 case 127:   /* as well as DEL chars */
                     break;
                 default:
-                    if ((*history)->cache[x] < 32) break; /* ignore ascii control chars */
-                    buffer[bufferlen++] = (*history)->cache[x]; /* copy everything else */
+                    if (g->history->cache[x] < 32) break; /* ignore ascii control chars */
+                    g->buf[bufferlen++] = g->history->cache[x]; /* copy everything else */
                     break;
             }
         }
         /* check if there is a single . on the last line */
-        if ((buffer[bufferlen - 1] == '\n') && (buffer[bufferlen - 2] == '.')) bufferlen -= 2;
+        if ((g->buf[bufferlen - 1] == '\n') && (g->buf[bufferlen - 2] == '.')) bufferlen -= 2;
     }
 
-    /* terminate the buffer with a NULL terminator */
-    buffer[bufferlen] = 0;
+    /* terminate the g->buf with a NULL terminator */
+    g->buf[bufferlen] = 0;
     /* display the file on screen */
     firstline = 0;
     lastline = ui_getrowcount() - 3;
 
     for (;;) { /* display-control loop */
         y = 0;
-        for (txtptr = buffer; txtptr != NULL; ) {
+        for (txtptr = g->buf; txtptr != NULL; ) {
             txtptr = wordwrap(txtptr, linebuff, 80);
             if (y >= firstline) {
-                for (x = 0; linebuff[x] != 0; x++) ui_putchar(linebuff[x], cfg->attr_textnorm, x, y + 1 - firstline);
-                for (; x < 80; x++) ui_putchar(' ', cfg->attr_textnorm, x, y + 1 - firstline);
+                for (x = 0; linebuff[x] != 0; x++) ui_putchar(linebuff[x], g->cfg.attr_textnorm, x, y + 1 - firstline);
+                for (; x < 80; x++) ui_putchar(' ', g->cfg.attr_textnorm, x, y + 1 - firstline);
             }
             y++;
             if (y > lastline) break;
@@ -134,32 +134,32 @@ int display_text(struct historytype **history, struct gopherusconfig *cfg, char 
         if (y <= lastline) {
             eof_flag = 1;
             for (; y <= lastline ; y++) { /* fill the rest of the screen (if any left) with blanks */
-                for (x = 0; x < 80; x++) ui_putchar(' ', cfg->attr_textnorm, x, y + 1 - firstline);
+                for (x = 0; x < 80; x++) ui_putchar(' ', g->cfg.attr_textnorm, x, y + 1 - firstline);
             }
         } else {
             eof_flag = 0;
         }
-        draw_statusbar(statusbar, cfg);
+        draw_statusbar(g->statusbar, &(g->cfg));
         x = ui_getkey();
         switch (x) {
             case KEY_BACKSPACE:
                 return DISPLAY_ORDER_BACK;
                 break;
             case KEY_TAB:
-                if (edit_url(history, cfg) == 0) return DISPLAY_ORDER_NONE;
+                if (edit_url(&(g->history), &(g->cfg)) == 0) return DISPLAY_ORDER_NONE;
                 break;
             case KEY_ESCAPE:
-                if (ask_quit_confirmation(cfg) != 0) return DISPLAY_ORDER_QUIT;
+                if (ask_quit_confirmation(&(g->cfg)) != 0) return DISPLAY_ORDER_QUIT;
                 break;
             case KEY_F1: /* help */
-                history_add(history, PARSEURL_PROTO_GOPHER, "#manual", 70, '0', "");
+                history_add(&(g->history), PARSEURL_PROTO_GOPHER, "#manual", 70, '0', "");
                 return DISPLAY_ORDER_NONE;
                 break;
             case KEY_F5: /* refresh */
                 return DISPLAY_ORDER_REFR;
                 break;
             case KEY_F9: /* download */
-                history_add(history, (*history)->protocol, (*history)->host, (*history)->port, '9', (*history)->selector);
+                history_add(&(g->history), g->history->protocol, g->history->host, g->history->port, '9', g->history->selector);
                 return DISPLAY_ORDER_NONE;
                 break;
             case KEY_UP:
@@ -167,7 +167,7 @@ int display_text(struct historytype **history, struct gopherusconfig *cfg, char 
                     firstline -= 1;
                     lastline -= 1;
                 } else {
-                    set_statusbar(statusbar, "Reached the top of the file");
+                    set_statusbar(g->statusbar, "Reached the top of the file");
                 }
                 break;
             case KEY_DOWN:
@@ -175,7 +175,7 @@ int display_text(struct historytype **history, struct gopherusconfig *cfg, char 
                     firstline += 1;
                     lastline += 1;
                 } else {
-                    set_statusbar(statusbar, "Reached end of file");
+                    set_statusbar(g->statusbar, "Reached end of file");
                 }
                 break;
             case KEY_HOME:
@@ -188,7 +188,7 @@ int display_text(struct historytype **history, struct gopherusconfig *cfg, char 
                     if (firstline < 0) firstline = 0;
                     lastline = firstline + ui_getrowcount() - 3;
                 } else {
-                    set_statusbar(statusbar, "Reached the top of the file");
+                    set_statusbar(g->statusbar, "Reached the top of the file");
                 }
                 break;
             case KEY_END:
@@ -198,7 +198,7 @@ int display_text(struct historytype **history, struct gopherusconfig *cfg, char 
                     firstline += ui_getrowcount() - 3;
                     lastline += ui_getrowcount() - 3;
                 } else {
-                    set_statusbar(statusbar, "Reached end of file");
+                    set_statusbar(g->statusbar, "Reached end of file");
                 }
                 break;
             case KEY_QUIT: /* QUIT IMMEDIATELY */
@@ -206,7 +206,7 @@ int display_text(struct historytype **history, struct gopherusconfig *cfg, char 
                 break;
             default:  /* unhandled key */
                 /* sprintf(linebuff, "Got invalid key: 0x%02lX", x);
-                   set_statusbar(statusbar, linebuff); */
+                   set_statusbar(g->statusbar, linebuff); */
                 break;
         }
     }
