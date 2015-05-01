@@ -23,7 +23,7 @@ void draw_urlbar(struct historytype *history, struct gopherusconfig *cfg)
     int url_len, x;
     char urlstr[80];
     ui_putchar('[', cfg->attr_urlbardeco, 0, 0);
-    url_len = buildgopherurl(urlstr, 79, history->protocol, history->host, history->port, history->itemtype, history->selector);
+    url_len = build_url(urlstr, 79, history->protocol, history->host, history->port, history->itemtype, history->selector);
 
     for (x = 0; x < 79; x++) {
         if (x < url_len) {
@@ -132,7 +132,7 @@ int editstring(char *url, int maxlen, int maxdisplaylen, int xx, int yy, int att
 int edit_url(struct historytype **history, struct gopherusconfig *cfg)
 {
     char url[256];
-    int urllen = buildgopherurl(url, 256, (*history)->protocol, (*history)->host, (*history)->port, (*history)->itemtype, (*history)->selector);
+    int urllen = build_url(url, 256, (*history)->protocol, (*history)->host, (*history)->port, (*history)->itemtype, (*history)->selector);
 
     if (urllen < 0)
         return -1;

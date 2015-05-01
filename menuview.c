@@ -139,7 +139,7 @@ int display_menu(struct gopherus *g)
     for (;;) {
         curURL[0] = 0;
         if (*selectedline >= 0) {   /* if any position is selected, print the url in status bar */
-            buildgopherurl(curURL, 512, PARSEURL_PROTO_GOPHER, line_host[*selectedline], line_port[*selectedline], line_itemtype[*selectedline], line_selector[*selectedline]);
+            build_url(curURL, 512, PARSEURL_PROTO_GOPHER, line_host[*selectedline], line_port[*selectedline], line_itemtype[*selectedline], line_selector[*selectedline]);
             set_statusbar(g->statusbar, curURL);
         }
         /* start drawing lines of the menu */

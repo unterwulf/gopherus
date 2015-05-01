@@ -102,94 +102,103 @@ int parsegopherurl(char *url, char *host, int *port, char *itemtype, char *selec
     return protocol;
 }
 
-/* computes an URL string from exploded gopher parts, and returns its length. Returns -1 on error. */
-int buildgopherurl(char *res, int maxlen, int protocol, char *host, int port, char itemtype, char *selector)
+static int build_http_url(char *res, int maxlen, const char *host, int port, const char *selector)
 {
-    int x = 0;
-    char *protoname_gopher = "gopher://";
-    char *protoname_http = "http://";
-    char *protoname = protoname_gopher;
-    maxlen -= 1;
+    static const char *protoname = "http://";
+    int i;
 
-    if (protocol == PARSEURL_PROTO_HTTP) { /* http URL */
-        protoname = protoname_http;
-        for (; *protoname != 0; protoname++) { /* protocol */
-            if (x == maxlen) goto maxlenreached;
-            res[x++] = *protoname;
-        }
-        for (; *host != 0; host++) { /* hostname */
-            if (x == maxlen) goto maxlenreached;
-            res[x++] = *host;
-        }
-        if (port != 80) { /* port (optional, only if not 80) */
-            if (x + 6 >= maxlen) goto maxlenreached;
-            res[x++] = ':';
-            x += int2str(&res[x], port);
-        }
-        if (x == maxlen) goto maxlenreached; /* / delimiter */
-        res[x++] = '/';
-        for (; *selector != 0; selector++) { /* url */
-            if (x == maxlen) goto maxlenreached;
-            res[x++] = *selector;
-        }
-        res[x] = 0;
-        return x;
+    maxlen--;
+
+    for (i = 0; protoname[i] && (i < maxlen); i++)
+        res[i] = protoname[i];
+
+    while (*host && (i < maxlen))
+        res[i++] = *host++;
+
+    /* port (optional, only if not 80) */
+    if (port != 80 && (i + 6 < maxlen)) {
+        res[i++] = ':';
+        i += int2str(&res[i], port);
     }
-    /* The proto is gopher -- validate input data */
+
+    if (i < maxlen)
+        res[i++] = '/';
+
+    while (*selector && (i < maxlen))
+        res[i++] = *selector++;
+
+    res[i] = '\0';
+    return i;
+}
+
+static int build_gopher_url(char *res, int maxlen, const char *host, int port, char itemtype, char *selector)
+{
+    static const char *protoname = "gopher://";
+    int i = 0;
+
+    maxlen--;
+
     if (maxlen < 2) return -1;
     if ((port < 1) || (port > 65535)) return -1;
-    if ((host == NULL) || (res == NULL) || (selector == NULL)) return -1;
+    if (!host || !res || !selector) return -1;
     if (itemtype < 33) return -1;
+
     /* detect special hURL links */
     if (itemtype == GOPHER_ITEM_HTML) {
         if ((strstr(selector, "URL:") == selector) || (strstr(selector, "/URL:") == selector)) {
-            if (selector[0] == '/') selector += 1;
+            if (selector[0] == '/') selector++;
             selector += 4;
-            for (; *selector != 0; selector += 1) {
-                if (x == maxlen) goto maxlenreached;
-                res[x++] = *selector;
-            }
-            res[x] = 0;
-            return x;
+            i = 0;
+            while (*selector && (i < maxlen))
+                res[i++] = *selector++;
         }
-    }
-    /* this is a classic gopher location */
-    for (; *protoname != 0; protoname += 1) {
-        if (x == maxlen) goto maxlenreached;
-        res[x++] = *protoname;
-    }
-    /* if empty host, return only the gopher:// string */
-    if (host[0] == 0) {
-        res[x] = 0;
-        return x;
-    }
-    /* build the url string */
-    for (; *host != 0; host += 1) {
-        if (x == maxlen) goto maxlenreached;
-        res[x++] = *host;
-    }
-    if (port != 70) {
-        if (x + 6 >= maxlen) goto maxlenreached;
-        res[x++] = ':';
-        x += int2str(&res[x], port);
-    }
-    if (x == maxlen) goto maxlenreached;
-    res[x++] = '/';
-    if (x == maxlen) goto maxlenreached;
-    res[x++] = itemtype;
-    for (; *selector != 0; selector += 1) {
-        if (x == maxlen) goto maxlenreached;
-        if (((unsigned)*selector <= 0x1F) || ((unsigned)*selector >= 0x80)) { /* encode unsafe chars - RFC 1738: */
-            if (x + 3 > maxlen) goto maxlenreached;       /* URLs are written only with the graphic printable characters of the  */
-            res[x++] = '%';                               /* US-ASCII coded character set. The octets 80-FF hexadecimal are not  */
-            res[x++] = '0' + (*selector >> 4);            /* used in US-ASCII, and the octets 00-1F and 7F hexadecimal represent */
-            res[x++] = '0' + (*selector & 0x0F);          /* control characters; these must be encoded. */
-        } else {
-            res[x++] = *selector;
+    } else {
+        /* this is a classic gopher location */
+        for (i = 0; protoname[i] && (i < maxlen); i++)
+            res[i] = protoname[i];
+
+        /* if empty host, return only the gopher:// string */
+        if (!host[0]) {
+            res[i] = '\0';
+            return i;
+        }
+
+        /* build the url string */
+        while (*host && (i < maxlen))
+            res[i++] = *host++;
+
+        if (port != 70 && (i + 6 < maxlen)) {
+            res[i++] = ':';
+            i += int2str(&res[i], port);
+        }
+
+        if (i < maxlen)
+            res[i++] = '/';
+
+        if (i < maxlen)
+            res[i++] = itemtype;
+
+        for (; *selector && (i < maxlen); selector++) {
+            if (((unsigned)*selector <= 0x1F) || ((unsigned)*selector >= 0x80)) { /* encode unsafe chars - RFC 1738: */
+                if (i + 2 < maxlen) {                         /* URLs are written only with the graphic printable characters of the  */
+                    res[i++] = '%';                           /* US-ASCII coded character set. The octets 80-FF hexadecimal are not  */
+                    res[i++] = '0' + (*selector >> 4);        /* used in US-ASCII, and the octets 00-1F and 7F hexadecimal represent */
+                    res[i++] = '0' + (*selector & 0x0F);      /* control characters; these must be encoded. */
+                }
+            } else {
+                res[i++] = *selector;
+            }
         }
     }
 
-maxlenreached:
-    res[x] = 0;
-    return x;
+    res[i] = '\0';
+    return i;
+}
+
+/* computes an URL string from exploded gopher parts, and returns its length. Returns -1 on error. */
+int build_url(char *res, int maxlen, int protocol, char *host, int port, char itemtype, char *selector)
+{
+    return (protocol == PARSEURL_PROTO_HTTP)
+        ? build_http_url(res, maxlen, host, port, selector)
+        : build_gopher_url(res, maxlen, host, port, itemtype, selector);
 }
