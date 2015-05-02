@@ -14,7 +14,7 @@ int main(int argc, char **argv)
         puts("Usage: wraptest teststring");
         return 0;
     }
-    for (strptr = wordwrap(argv[1], res, 16); ; strptr = wordwrap(strptr, res, 16)) {
+    for (strptr = wordwrap(res, argv[1], 16); ; strptr = wordwrap(res, strptr, 16)) {
         printf("|%s|\r\n", res);
         if (strptr == NULL) break;
     }

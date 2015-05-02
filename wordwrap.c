@@ -6,7 +6,7 @@
 #include <stdlib.h>    /* NULL */
 #include "wordwrap.h"
 
-char *wordwrap(char *src, char *dst, int width)
+char *wordwrap(char *dst, const char *src, int width)
 {
     int i, lastspace = 0;
 
@@ -23,7 +23,7 @@ char *wordwrap(char *src, char *dst, int width)
             if ((i > 0) && (src[i - 1] == '\r'))
                 dst[i - 1] = '\0';
             dst[i] = '\0';
-            return src + i + 1;
+            return (char *)src + i + 1;
         }
     }
 
@@ -35,5 +35,5 @@ char *wordwrap(char *src, char *dst, int width)
     while (*src == ' ')
         src++;
 
-    return (*src == '\0') ? NULL : src;
+    return (*src == '\0') ? NULL : (char *)src;
 }

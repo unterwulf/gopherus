@@ -109,7 +109,7 @@ int display_menu(struct gopherus *g)
                     wraplen = 76;
                 }
                 line_description[linecount] = wrapptr;
-                wrapptr = wordwrap(wrapptr, singlelinebuf, wraplen);
+                wrapptr = wordwrap(singlelinebuf, wrapptr, wraplen);
                 line_description_len[linecount] = strlen(singlelinebuf);
                 line_selector[linecount] = selector;
                 line_host[linecount] = host;

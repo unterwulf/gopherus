@@ -9,6 +9,6 @@
 /* Fills *dst with part or totality of original *src and return a pointer
  * where to start next iteration. dst shall point to a buffer of size of
  * at least width + 1 chars. */
-char *wordwrap(char *src, char *dst, int width);
+char *wordwrap(char *dst, const char *src, int width);
 
 #endif

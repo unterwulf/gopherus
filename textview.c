@@ -28,7 +28,7 @@ static int display_text_loop(struct gopherus *g)
         long lineno = 0;
 
         for (txtptr = g->buf; txtptr != NULL && y <= lastline; lineno++) {
-            txtptr = wordwrap(txtptr, linebuff, 80);
+            txtptr = wordwrap(linebuff, txtptr, 80);
             if (lineno >= firstline) {
                 for (x = 0; linebuff[x] != 0; x++)
                     ui_putchar(linebuff[x], g->cfg.attr_textnorm, x, y);
