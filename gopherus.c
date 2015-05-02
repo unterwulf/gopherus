@@ -26,6 +26,7 @@
 #include "common.h"
 #include "dnscache.h"
 #include "embdpage.h"
+#include "gopher.h"
 #include "history.h"
 #include "menuview.h"
 #include "net.h"
@@ -281,7 +282,10 @@ static void mainloop(struct gopherus *g)
     int bufferlen;
 
     for (;;) {
-        if ((g->history->itemtype == '0') || (g->history->itemtype == '1') || (g->history->itemtype == '7') || (g->history->itemtype == 'h')) { /* if it's a displayable item type... */
+        if ((g->history->itemtype == GOPHER_ITEM_FILE) ||
+            (g->history->itemtype == GOPHER_ITEM_DIR) ||
+            (g->history->itemtype == GOPHER_ITEM_INDEX_SEARCH_SERVER) ||
+            (g->history->itemtype == GOPHER_ITEM_HTML)) { /* if it's a displayable item type... */
             draw_urlbar(g->history, &g->cfg);
 
             if (g->history->cache == NULL) { /* reload the resource if not in cache already */
@@ -303,14 +307,14 @@ static void mainloop(struct gopherus *g)
             }
 
             switch (g->history->itemtype) {
-                case '0': /* text file */
+                case GOPHER_ITEM_FILE: /* text file */
                     exitflag = display_text(g, TXT_FORMAT_RAW);
                     break;
-                case 'h': /* html file */
+                case GOPHER_ITEM_HTML: /* html file */
                     exitflag = display_text(g, TXT_FORMAT_HTM);
                     break;
-                case '1': /* menu */
-                case '7': /* query result (also a menu) */
+                case GOPHER_ITEM_DIR: /* menu */
+                case GOPHER_ITEM_INDEX_SEARCH_SERVER: /* query result (also a menu) */
                     exitflag = display_menu(g);
                     break;
                 default:
@@ -355,7 +359,12 @@ int main(int argc, char **argv)
 
     ui_init();
 
-    if (history_add(&g.history, PARSEURL_PROTO_GOPHER, "#welcome", 70, '1', "") != 0) {
+    if (history_add(&g.history,
+                    PARSEURL_PROTO_GOPHER,
+                    "#welcome",
+                    70,
+                    GOPHER_ITEM_DIR,
+                    "") != 0) {
         ui_puts("Out of memory.");
         return 2;
     }

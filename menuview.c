@@ -7,19 +7,23 @@
 #include <stdlib.h>
 #include <string.h>
 #include "common.h"
+#include "gopher.h"
 #include "history.h"
 #include "menuview.h"
 #include "parseurl.h"
 #include "ui.h"
 #include "wordwrap.h"
 
+/* internal itemtype for continuation of the previous (wrapped) menu line */
+#define GOPHERUS_ITEM_CONT 0
+
 /* used by display_menu to tell whether an itemtype is selectable or not */
 static int isitemtypeselectable(char itemtype)
 {
     switch (itemtype) {
-        case 'i':  /* inline message */
-        case '3':  /* error */
-        case 0:    /* special internal type for menu lines continuations */
+        case GOPHER_ITEM_INLINE_MSG:
+        case GOPHER_ITEM_ERROR:
+        case GOPHERUS_ITEM_CONT:
             return 0;
         default:   /* everything else is selectable */
             return 1;
@@ -88,8 +92,12 @@ int display_menu(struct gopherus *g)
                 lastlinkline = linecount;
             }
             for (;; firstiteration += 1) {
-                if ((firstiteration > 0) && (itemtype != 'i') && (itemtype != '3')) itemtype = 0;
-                if (itemtype == 'i') {
+                if ((firstiteration > 0) &&
+                    (itemtype != GOPHER_ITEM_INLINE_MSG) &&
+                    (itemtype != GOPHER_ITEM_ERROR))
+                    itemtype = GOPHERUS_ITEM_CONT;
+
+                if (itemtype == GOPHER_ITEM_INLINE_MSG) {
                     wraplen = 80;
                 } else {
                     wraplen = 76;
@@ -142,35 +150,35 @@ int display_menu(struct gopherus *g)
                     attr = g->cfg.attr_menutype;
                 }
                 switch (line_itemtype[x]) {
-                    case 'i': /* message */
+                    case GOPHER_ITEM_INLINE_MSG: /* message */
                         break;
-                    case 'h': /* html */
+                    case GOPHER_ITEM_HTML: /* html */
                         prefix = "HTM";
                         break;
-                    case '0': /* text */
+                    case GOPHER_ITEM_FILE: /* text */
                         prefix = "TXT";
                         break;
-                    case '1':
+                    case GOPHER_ITEM_DIR:
                         prefix = "DIR";
                         break;
-                    case '3':
+                    case GOPHER_ITEM_ERROR:
                         prefix = "ERR";
                         break;
-                    case '5':
-                    case '9':
+                    case GOPHER_ITEM_DOSBINARC:
+                    case GOPHER_ITEM_BINARY:
                         prefix = "BIN";
                         break;
-                    case '7':
+                    case GOPHER_ITEM_INDEX_SEARCH_SERVER:
                         prefix = "ASK";
                         break;
-                    case 'I':
+                    case GOPHER_ITEM_IMAGE:
                         prefix = "IMG";
                         break;
                     case 'P':
                     case 'd':
                         prefix = "PDF";
                         break;
-                    case 0: /* this is an internal itemtype that means 'it's a continuation of the previous (wrapped) line */
+                    case GOPHERUS_ITEM_CONT:
                         prefix = "   ";
                         break;
                     default: /* unknown type */
@@ -188,10 +196,10 @@ int display_menu(struct gopherus *g)
                 if (x == *selectedline) {
                     /* attr |= 0x00; */
                     attr = g->cfg.attr_menucurrent;
-                } else if (line_itemtype[x] == 'i') {
+                } else if (line_itemtype[x] == GOPHER_ITEM_INLINE_MSG) {
                     /* attr |= 0x07; */
                     attr = g->cfg.attr_textnorm;
-                } else if (line_itemtype[x] == '3') {
+                } else if (line_itemtype[x] == GOPHER_ITEM_ERROR) {
                     attr = g->cfg.attr_menuerr;
                     /* attr |= 0x04; */
                 } else {
@@ -231,7 +239,7 @@ int display_menu(struct gopherus *g)
             case KEY_F9:
             case KEY_ENTER:
                 if (*selectedline >= 0) {
-                    if ((line_itemtype[*selectedline] == '7') && (keypress != KEY_F9)) { /* a query needs to be issued */
+                    if ((line_itemtype[*selectedline] == GOPHER_ITEM_INDEX_SEARCH_SERVER) && (keypress != KEY_F9)) { /* a query needs to be issued */
                         char query[64];
                         char *finalselector;
                         sprintf(query, "Enter a query: ");
@@ -252,7 +260,8 @@ int display_menu(struct gopherus *g)
                         int tmpproto, tmpport;
                         char tmphost[512], tmpitemtype, tmpselector[512];
                         tmpproto = parsegopherurl(curURL, tmphost, &tmpport, &tmpitemtype, tmpselector);
-                        if (keypress == KEY_F9) tmpitemtype = '9'; /* force the itemtype to 'binary' if 'save as' was requested */
+                        if (keypress == KEY_F9)
+                            tmpitemtype = GOPHER_ITEM_BINARY; /* force the itemtype to 'binary' if 'save as' was requested */
                         if (tmpproto < 0) {
                             set_statusbar(g->statusbar, "!Unknown protocol");
                             break;
@@ -267,7 +276,9 @@ int display_menu(struct gopherus *g)
                 if (ask_quit_confirmation(&(g->cfg)) != 0) return DISPLAY_ORDER_QUIT;
                 break;
             case KEY_F1: /* help */
-                history_add(&(g->history), PARSEURL_PROTO_GOPHER, "#manual", 70, '0', "");
+                history_add(&(g->history),
+                            PARSEURL_PROTO_GOPHER,
+                            "#manual", 70, GOPHER_ITEM_FILE, "");
                 return DISPLAY_ORDER_NONE;
                 break;
             case KEY_F5: /* refresh */

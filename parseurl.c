@@ -4,6 +4,7 @@
 
 #include <string.h>   /* strstr() */
 #include <stdlib.h>   /* atoi() */
+#include "gopher.h"
 #include "int2str.h"  /* int2str() is used to convert the port into a string */
 #include "parseurl.h"
 
@@ -14,7 +15,7 @@ int parsegopherurl(char *url, char *host, int *port, char *itemtype, char *selec
     char *curtoken;
     /* set default values */
     *port = 70;
-    *itemtype = '1';
+    *itemtype = GOPHER_ITEM_DIR;
     *selector = 0;
     /* skip the protocol part, if present */
     for (x = 0; url[x] != 0; x++) {
@@ -33,7 +34,7 @@ int parsegopherurl(char *url, char *host, int *port, char *itemtype, char *selec
                     } else if (strcasecmp(protostr, "http") == 0) {
                         protocol = PARSEURL_PROTO_HTTP;
                         *port = 80; /* default port is 80 for HTTP */
-                        *itemtype = 'h';
+                        *itemtype = GOPHER_ITEM_HTML;
                     } else {
                         protocol = PARSEURL_PROTO_UNKNOWN;
                     }
@@ -140,7 +141,7 @@ int buildgopherurl(char *res, int maxlen, int protocol, char *host, int port, ch
     if ((host == NULL) || (res == NULL) || (selector == NULL)) return -1;
     if (itemtype < 33) return -1;
     /* detect special hURL links */
-    if (itemtype == 'h') {
+    if (itemtype == GOPHER_ITEM_HTML) {
         if ((strstr(selector, "URL:") == selector) || (strstr(selector, "/URL:") == selector)) {
             if (selector[0] == '/') selector += 1;
             selector += 4;

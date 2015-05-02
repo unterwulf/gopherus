@@ -5,6 +5,7 @@
 
 #include <stdlib.h>  /* malloc(), NULL */
 #include <string.h>  /* strcasecmp(), ... */
+#include "gopher.h"
 #include "history.h"
 
 #define MAXALLOWEDCACHE 1024*1024*2
@@ -34,7 +35,8 @@ void history_back(struct historytype **history)
     }
 
     /* check if the last request was a query, and if not in cache, put a message instead to avoid reloading a query again */
-    if (((*history)->itemtype == '7') && ((*history)->cache == NULL)) {
+    if (((*history)->itemtype == GOPHER_ITEM_INDEX_SEARCH_SERVER) &&
+        ((*history)->cache == NULL)) {
         char *msg = "3Query not in cache\ni\niThis location is not avaiable in the local cache. Gopherus is not reissuing custom queries automatically. If you wish to force a reload, press F5.\n";
         (*history)->cachesize = strlen(msg);
         (*history)->cache = malloc((*history)->cachesize + 1);

@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "common.h"
+#include "gopher.h"
 #include "history.h"
 #include "parseurl.h"
 #include "textview.h"
@@ -152,14 +153,21 @@ int display_text(struct gopherus *g, int txtformat)
                 if (ask_quit_confirmation(&(g->cfg)) != 0) return DISPLAY_ORDER_QUIT;
                 break;
             case KEY_F1: /* help */
-                history_add(&(g->history), PARSEURL_PROTO_GOPHER, "#manual", 70, '0', "");
+                history_add(&(g->history),
+                            PARSEURL_PROTO_GOPHER,
+                            "#manual", 70, GOPHER_ITEM_FILE, "");
                 return DISPLAY_ORDER_NONE;
                 break;
             case KEY_F5: /* refresh */
                 return DISPLAY_ORDER_REFR;
                 break;
             case KEY_F9: /* download */
-                history_add(&(g->history), g->history->protocol, g->history->host, g->history->port, '9', g->history->selector);
+                history_add(&(g->history),
+                            g->history->protocol,
+                            g->history->host,
+                            g->history->port,
+                            GOPHER_ITEM_BINARY,
+                            g->history->selector);
                 return DISPLAY_ORDER_NONE;
                 break;
             case KEY_UP:
