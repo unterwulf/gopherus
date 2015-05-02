@@ -2,10 +2,10 @@
  * This file is part of the gopherus project.
  */
 
+#include <stdio.h>
 #include <string.h>   /* strstr() */
 #include <stdlib.h>   /* atoi() */
 #include "gopher.h"
-#include "int2str.h"  /* int2str() is used to convert the port into a string */
 #include "parseurl.h"
 
 int parsegopherurl(char *url, char *host, int *port, char *itemtype, char *selector)
@@ -118,7 +118,7 @@ static int build_http_url(char *res, int maxlen, const char *host, int port, con
     /* port (optional, only if not 80) */
     if (port != 80 && (i + 6 < maxlen)) {
         res[i++] = ':';
-        i += int2str(&res[i], port);
+        i += sprintf(&res[i], "%u", port);
     }
 
     if (i < maxlen)
@@ -169,7 +169,7 @@ static int build_gopher_url(char *res, int maxlen, const char *host, int port, c
 
         if (port != 70 && (i + 6 < maxlen)) {
             res[i++] = ':';
-            i += int2str(&res[i], port);
+            i += sprintf(&res[i], "%u", port);
         }
 
         if (i < maxlen)

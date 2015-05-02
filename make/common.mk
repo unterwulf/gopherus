@@ -9,7 +9,6 @@ objs := \
 	embdpage.o \
 	gopherus.o \
 	history.o \
-	int2str.o \
 	menuview.o \
 	parseurl.o \
 	textview.o \
