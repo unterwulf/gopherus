@@ -20,7 +20,7 @@ static int display_text_loop(struct gopherus *g)
     long lastline = ui_getrowcount() - 2;
     char *txtptr;
     int eof_flag;
-    char linebuff[80];
+    char linebuff[81];
     int key;
 
     for (;;) {

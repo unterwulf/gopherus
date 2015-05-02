@@ -6,7 +6,9 @@
 #ifndef WORDWRAP_H
 #define WORDWRAP_H
 
-/* fills *line with part or totality of original *str and return a pointer of *str where to start next iteration */
-char *wordwrap(char *str, char *line, int width);
+/* Fills *dst with part or totality of original *src and return a pointer
+ * where to start next iteration. dst shall point to a buffer of size of
+ * at least width + 1 chars. */
+char *wordwrap(char *src, char *dst, int width);
 
 #endif
