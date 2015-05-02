@@ -11,7 +11,7 @@
 #include "ui.h"
 #include "ascii.h" /* ascii fonts */
 
-static int cursorx, cursory, sdlinited;
+static int cursorx, cursory;
 static SDL_Surface *screen;
 static int cursorstate = 1;
 
@@ -46,12 +46,11 @@ static void putpixel(SDL_Surface *surface, int x, int y, Uint32 pixel)
     }
 }
 
-static void initsdl(void)
+void ui_init(void)
 {
     SDL_Init(SDL_INIT_VIDEO);
     screen = SDL_SetVideoMode(640, 480, 32, 0);
     SDL_WM_SetCaption("Gopherus", NULL);
-    sdlinited = 1;
     SDL_EnableKeyRepeat(800, 80); /* enable repeating keys */
     SDL_EnableUNICODE(1);  /* using the SDL unicode support actually for getting ASCII */
     atexit(SDL_Quit); /* clean up at exit time */
@@ -69,18 +68,12 @@ int ui_getcolcount(void)
 
 void ui_cls(void)
 {
-    if (sdlinited == 0)
-        initsdl();
-
     SDL_FillRect(screen, NULL, 0);
     SDL_Flip(screen);
 }
 
 void ui_puts(char *str)
 {
-    if (sdlinited == 0)
-        initsdl();
-
     puts(str);
 }
 
@@ -94,9 +87,6 @@ void ui_putchar(char c, int attr, int x, int y)
 {
     int xx, yy;
     const long attrpal[16] = {0x000000l, 0x0000AAl, 0x00AA00l, 0x00AAAAl, 0xAA0000l, 0xAA00AAl, 0xAA5500l, 0xAAAAAAl, 0x555555l, 0x5555FFl, 0x55FF55l, 0x55FFFFl, 0xFF5555l, 0xFF55FFl, 0xFFFF55l, 0xFFFFFFl};
-
-    if (sdlinited == 0)
-        initsdl();
 
     for (yy = 0; yy < 16; yy++) {
         for (xx = 0; xx < 8; xx++) {
@@ -122,9 +112,6 @@ void ui_putchar(char c, int attr, int x, int y)
 int ui_getkey(void)
 {
     SDL_Event event;
-
-    if (sdlinited == 0)
-        initsdl();
 
     for (;;) {
         if (SDL_WaitEvent(&event) == 0)
@@ -217,8 +204,6 @@ int ui_kbhit(void)
 {
     int res;
 
-    if (sdlinited == 0)
-        initsdl();
     flushKeyUpEvents();  /* silently flush all possible 'KEY UP' events */
     res = SDL_PollEvent(NULL);
 
@@ -227,14 +212,10 @@ int ui_kbhit(void)
 
 void ui_cursor_show(void)
 {
-    if (sdlinited == 0)
-        initsdl();
     cursorstate = 1;
 }
 
 void ui_cursor_hide(void)
 {
-    if (sdlinited == 0)
-        initsdl();
     cursorstate = 0;
 }

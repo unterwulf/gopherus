@@ -11,6 +11,11 @@
 #include <pc.h>    /* ScreenRows() */
 #include "ui.h"
 
+void ui_init(void)
+{
+    return;
+}
+
 int ui_getrowcount(void)
 {
     return ScreenRows();

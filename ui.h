@@ -8,6 +8,8 @@
 #ifndef UI_H
 #define UI_H
 
+void ui_init(void);
+
 /* returns the number of rows of current text mode */
 int ui_getrowcount(void);
 

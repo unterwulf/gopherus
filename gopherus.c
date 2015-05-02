@@ -990,6 +990,8 @@ int main(int argc, char **argv)
     /* Load configuration (or defaults) */
     loadcfg(&cfg);
 
+    ui_init();
+
     if (history_add(&history, PARSEURL_PROTO_GOPHER, "#welcome", 70, '1', "") != 0) {
         ui_puts("Out of memory.");
         return 2;
