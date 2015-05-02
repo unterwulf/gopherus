@@ -9,23 +9,16 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h>
+#include <time.h>
 
 /* WatTCP includes */
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
 #include <tcp.h>
 
 #include "net.h" /* include self for control */
 
 
-#define WINDOWSIZE  (16*1024)
 #define BUFFERSIZE  2048
 
-#define debugMode 0
-#define verboseMode 0
 
 
 
@@ -100,7 +93,7 @@ struct net_tcpsocket *net_connect(unsigned long ipaddr, int port) {
 
 
 /* Sends data on socket 'socket'.
-   Returns the number of bytes sent on success, and <0 otherwise. The error code can be translated into a human error message via libtcp_strerr(). */
+   Returns the number of bytes sent on success, and <0 otherwise. */
 int net_send(struct net_tcpsocket *socket, char *line, int len) {
   int res;
   int status = 0;
@@ -114,7 +107,7 @@ int net_send(struct net_tcpsocket *socket, char *line, int len) {
 
 
 /* Reads data from socket 'sock' and write it into buffer 'buff', until end of connection. Will fall into error if the amount of data is bigger than 'maxlen' bytes.
-Returns the amount of data read (in bytes) on success, or a negative value otherwise. The error code can be translated into a human error message via libtcp_strerr(). */
+Returns the amount of data read (in bytes) on success, or a negative value otherwise. */
 int net_recv(struct net_tcpsocket *socket, char *buff, int maxlen) {
   int i;
   int status = 0;
@@ -143,12 +136,4 @@ void net_abort(struct net_tcpsocket *socket) {
   sock_abort(socket->sock);
   free(socket);
   return;
-}
-
-
-/* Translates a libtcp result from its single integer code into a humanly readable message string.
-Returns a pointer to the translated string. */
-char *net_strerror(int socket_result) {
-  if (socket_result == 0) return("");
-  return("");
 }

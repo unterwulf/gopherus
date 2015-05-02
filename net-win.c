@@ -9,7 +9,6 @@
 #include <winsock2.h> /* socket() */
 #include <stdio.h> /* sprintf() */
 #include <unistd.h> /* close() */
-#include <errno.h> /* EAGAIN, EWOULDBLOCK... */
 #include <stdint.h> /* uint32_t */
 
 #include "net.h" /* include self for control */
