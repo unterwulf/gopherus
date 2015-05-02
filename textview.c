@@ -16,41 +16,57 @@
 static int display_text_loop(struct gopherus *g)
 {
     long x;
-    long firstline = 0;
-    long lastline = ui_getrowcount() - 2;
+    long firstline = 1;
+    int scroll = -1; /* initial movement to force screen update */
+    long lastrow = ui_getrowcount() - 2;
     char *txtptr;
-    int eof_flag;
+    int eof_flag = 0;
     char linebuff[81];
     int key;
 
     for (;;) {
-        long y = 1;
-        long lineno = 0;
+        if (scroll != 0)
+        {
+            if (scroll < 0 && firstline == 0) {
+                set_statusbar(g->statusbar, "Reached top of file");
+            } else if (scroll > 0 && eof_flag) {
+                set_statusbar(g->statusbar, "Reached end of file");
+            } else {
+                long y = 1;
+                long lineno = 0;
 
-        for (txtptr = g->buf; txtptr != NULL && y <= lastline; lineno++) {
-            txtptr = wordwrap(linebuff, txtptr, 80);
-            if (lineno >= firstline) {
-                for (x = 0; linebuff[x] != 0; x++)
-                    ui_putchar(linebuff[x], g->cfg.attr_textnorm, x, y);
-                for (; x < 80; x++)
-                    ui_putchar(' ', g->cfg.attr_textnorm, x, y);
-                y++;
+                firstline += scroll;
+                if (firstline < 0)
+                    firstline = 0;
+
+                for (txtptr = g->buf; txtptr != NULL && y <= lastrow; lineno++) {
+                    txtptr = wordwrap(linebuff, txtptr, 80);
+                    if (lineno >= firstline) {
+                        for (x = 0; linebuff[x] != 0; x++)
+                            ui_putchar(linebuff[x], g->cfg.attr_textnorm, x, y);
+                        for (; x < 80; x++)
+                            ui_putchar(' ', g->cfg.attr_textnorm, x, y);
+                        y++;
+                    }
+                }
+
+                if (y <= lastrow) {
+                    eof_flag = 1;
+
+                    /* fill the rest of the screen (if any left) with blanks */
+                    for (; y <= lastrow; y++) {
+                        for (x = 0; x < 80; x++)
+                            ui_putchar(' ', g->cfg.attr_textnorm, x, y);
+                    }
+                } else {
+                    eof_flag = 0;
+                }
             }
+
+            draw_statusbar(g->statusbar, &(g->cfg));
+            scroll = 0;
         }
 
-        if (y <= lastline) {
-            eof_flag = 1;
-
-            /* fill the rest of the screen (if any left) with blanks */
-            for (; y <= lastline; y++) {
-                for (x = 0; x < 80; x++)
-                    ui_putchar(' ', g->cfg.attr_textnorm, x, y);
-            }
-        } else {
-            eof_flag = 0;
-        }
-
-        draw_statusbar(g->statusbar, &(g->cfg));
         key = ui_getkey();
 
         switch (key) {
@@ -80,37 +96,21 @@ static int display_text_loop(struct gopherus *g)
                             g->history->selector);
                 return DISPLAY_ORDER_NONE;
             case KEY_UP:
-                if (firstline > 0) {
-                    firstline -= 1;
-                } else {
-                    set_statusbar(g->statusbar, "Reached the top of the file");
-                }
+                scroll = -1;
                 break;
             case KEY_DOWN:
-                if (!eof_flag)
-                    firstline++;
-                else
-                    set_statusbar(g->statusbar, "Reached end of file");
+                scroll = 1;
                 break;
             case KEY_HOME:
-                firstline = 0;
+                scroll = -firstline;
                 break;
             case KEY_PAGEUP:
-                if (firstline > 0) {
-                    firstline -= ui_getrowcount() - 3;
-                    if (firstline < 0)
-                        firstline = 0;
-                } else {
-                    set_statusbar(g->statusbar, "Reached the top of the file");
-                }
+                scroll = -(ui_getrowcount() - 3);
                 break;
             case KEY_END:
                 break;
             case KEY_PAGEDOWN:
-                if (!eof_flag)
-                    firstline += ui_getrowcount() - 3;
-                else
-                    set_statusbar(g->statusbar, "Reached end of file");
+                scroll = ui_getrowcount() - 3;
                 break;
             case KEY_QUIT: /* QUIT IMMEDIATELY */
                 return 1;
