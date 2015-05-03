@@ -55,6 +55,8 @@ struct gopherus {
 
 void set_statusbar(char *buf, char *msg);
 
+void draw_field(const char *str, int attr, int x, int y, int width, int len);
+
 void draw_urlbar(struct historytype *history, struct gopherusconfig *cfg);
 
 void draw_statusbar(char *origmsg, struct gopherusconfig *cfg);

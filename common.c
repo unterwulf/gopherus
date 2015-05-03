@@ -9,6 +9,24 @@
 #include "parseurl.h"
 #include "ui.h"
 
+void draw_field(const char *str, int attr, int x, int y, int width, int len)
+{
+    int i;
+
+    if (len == -1)
+        len = strlen(str);
+
+    if (len < width) {
+        ui_cputs(str, attr, x, y);
+
+        for (i = len; i < width; i++)
+            ui_putchar(' ', attr, x+i, y);
+    } else {
+        for (i = 0; i < width; i++)
+            ui_putchar(str[i], attr, x+i, y);
+    }
+}
+
 void set_statusbar(char *buf, char *msg)
 {
     if (buf[0] == 0) { /* accept new status message only if no message set yet */
@@ -20,19 +38,11 @@ void set_statusbar(char *buf, char *msg)
 
 void draw_urlbar(struct historytype *history, struct gopherusconfig *cfg)
 {
-    int url_len, x;
     char urlstr[80];
+    int url_len = build_url(urlstr, 79, history->protocol, history->host, history->port, history->itemtype, history->selector);
+
     ui_putchar('[', cfg->attr_urlbardeco, 0, 0);
-    url_len = build_url(urlstr, 79, history->protocol, history->host, history->port, history->itemtype, history->selector);
-
-    for (x = 0; x < 79; x++) {
-        if (x < url_len) {
-            ui_putchar(urlstr[x], cfg->attr_urlbar, x+1, 0);
-        } else {
-            ui_putchar(' ', cfg->attr_urlbar, x+1, 0);
-        }
-    }
-
+    draw_field(urlstr, cfg->attr_urlbar, 1, 0, 78, url_len);
     ui_putchar(']', cfg->attr_urlbardeco, 79, 0);
 }
 
@@ -77,13 +87,7 @@ int editstring(char *str, int maxlen, int maxdisplaylen, int x, int y, int attr)
 
         ui_locate(cursorpos + x - displayoffset, y);
 
-        for (i = 0; i < maxdisplaylen; i++) {
-            if ((i + displayoffset) < len) {
-                ui_putchar(str[displayoffset+i], attr, x+i, y);
-            } else {
-                ui_putchar(' ', attr, x+i, y);
-            }
-        }
+        draw_field(str + displayoffset, attr, x, y, maxdisplaylen, len - displayoffset);
 
         presskey = ui_getkey();
 

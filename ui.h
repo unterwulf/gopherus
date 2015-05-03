@@ -22,6 +22,8 @@ void ui_cls(void);
 /* print a string on screen, and go to next line */
 void ui_puts(char *str);
 
+void ui_cputs(const char *str, int attr, int x, int y);
+
 /* Set the position (zero-based) of the cursor on screen */
 void ui_locate(int x, int y);
 

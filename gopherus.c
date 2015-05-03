@@ -336,12 +336,11 @@ static void mainloop(struct gopherus *g)
             }
         } else { /* the itemtype is not one of the internally displayable types -> ask to download it */
             char filename[64] = {0};
-            const char *prompt = "Download as: ";
-            int i;
+            static const char prompt[] = "Download as: ";
             set_statusbar(filename, ""); /* make sure to clear out the status bar */
             draw_statusbar(filename, &g->cfg);
-            for (i = 0; prompt[i] != 0; i++) ui_putchar(prompt[i], 0x70, i, ui_getrowcount() - 1);
-            if (editstring(filename, 63, 63, i, ui_getrowcount() - 1, 0x70) != 0) {
+            ui_cputs(prompt, 0x70, 0, ui_getrowcount() - 1);
+            if (editstring(filename, 63, 63, sizeof prompt - 1, ui_getrowcount() - 1, 0x70) != 0) {
                 loadfile_buff(g->history->protocol, g->history->host, g->history->port, g->history->selector, g->buf, buffersize, g->statusbar, filename, &g->cfg);
             }
             history_back(&(g->history));

@@ -196,8 +196,8 @@ int display_menu(struct gopherus *g)
                 }
                 z = 0;
                 if (prefix != NULL) {
-                    for (y = 0; y < 3; y++) ui_putchar(prefix[y], attr, y, 1 + (x - *screenlineoffset));
-                    ui_putchar(' ', attr, y, 1 + (x - *screenlineoffset));
+                    ui_cputs(prefix, attr, 0, 1 + (x - *screenlineoffset));
+                    ui_putchar(' ', attr, 3, 1 + (x - *screenlineoffset));
                     z = 4;
                 }
                 /* select foreground color */
@@ -221,13 +221,12 @@ int display_menu(struct gopherus *g)
                     }
                 }
                 /* print the the line's description */
-                for (y = 0; y < (80 - z); y++) {
-                    if (y < line_description_len[x]) {
-                        ui_putchar(line_description[x][y], attr, y + z, 1 + (x - *screenlineoffset));
-                    } else {
-                        ui_putchar(' ', attr, y + z, 1 + (x - *screenlineoffset));
-                    }
-                }
+                draw_field(line_description[x],
+                    attr,
+                    z,
+                    1 + (x - *screenlineoffset),
+                    80,
+                    line_description_len[x]);
             } else { /* x >= linecount */
                 for (y = 0; y < 80; y++) ui_putchar(' ', g->cfg.attr_textnorm, y, 1 + (x - *screenlineoffset));
             }

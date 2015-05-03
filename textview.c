@@ -42,10 +42,7 @@ static int display_text_loop(struct gopherus *g)
                 for (txtptr = g->buf; txtptr != NULL && y <= lastrow; lineno++) {
                     txtptr = wordwrap(linebuff, txtptr, 80);
                     if (lineno >= firstline) {
-                        for (x = 0; linebuff[x] != 0; x++)
-                            ui_putchar(linebuff[x], g->cfg.attr_textnorm, x, y);
-                        for (; x < 80; x++)
-                            ui_putchar(' ', g->cfg.attr_textnorm, x, y);
+                        draw_field(linebuff, g->cfg.attr_textnorm, 0, y, 80, -1);
                         y++;
                     }
                 }

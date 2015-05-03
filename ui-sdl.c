@@ -78,6 +78,12 @@ void ui_puts(char *str)
     puts(str);
 }
 
+void ui_cputs(const char *str, int attr, int x, int y)
+{
+    for (; *str; str++, x++)
+        ui_putchar(*str, attr, x, y);
+}
+
 void ui_locate(int x, int y)
 {
     cursorx = x;
