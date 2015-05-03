@@ -56,74 +56,90 @@ void draw_statusbar(char *origmsg, struct gopherusconfig *cfg)
 }
 
 /* edits a string on screen. returns 0 if the string hasn't been modified, non-zero otherwise. */
-int editstring(char *url, int maxlen, int maxdisplaylen, int xx, int yy, int attr)
+int editstring(char *str, int maxlen, int maxdisplaylen, int x, int y, int attr)
 {
-    int urllen, x, presskey, cursorpos, result = 0, displayoffset;
-    urllen = strlen(url);
-    cursorpos = urllen;
+    int i, presskey;
+    int len = strlen(str);
+    int cursorpos = len;
+    int result = 0;
+
     ui_cursor_show();
 
     for (;;) {
-        if (urllen > maxdisplaylen - 1) {
-            displayoffset = urllen - (maxdisplaylen - 1);
-        } else {
-            displayoffset = 0;
-        }
+        int displayoffset = (len > maxdisplaylen - 1)
+            ? len - (maxdisplaylen - 1) : 0;
+
         if (displayoffset > cursorpos - 8) {
             displayoffset = cursorpos - 8;
-            if (displayoffset < 0) displayoffset = 0;
+            if (displayoffset < 0)
+                displayoffset = 0;
         }
-        ui_locate(cursorpos + xx - displayoffset, yy);
-        for (x = 0; x < maxdisplaylen; x++) {
-            if ((x + displayoffset) < urllen) {
-                ui_putchar(url[x + displayoffset], attr, x+xx, yy);
+
+        ui_locate(cursorpos + x - displayoffset, y);
+
+        for (i = 0; i < maxdisplaylen; i++) {
+            if ((i + displayoffset) < len) {
+                ui_putchar(str[displayoffset+i], attr, x+i, y);
             } else {
-                ui_putchar(' ', attr, x+xx, yy);
+                ui_putchar(' ', attr, x+i, y);
             }
         }
+
         presskey = ui_getkey();
 
-        if ((presskey == KEY_ESCAPE) || (presskey == KEY_TAB)) {
-            result = 0;
-            break;
-        } else if (presskey == KEY_HOME) {
-            cursorpos = 0;
-        } else if (presskey == KEY_END) {
-            cursorpos = urllen;
-        } else if (presskey == KEY_ENTER) {
-            url[urllen] = 0; /* terminate the URL string with a NULL terminator */
-            result = -1;
-            break;
-        } else if (presskey == KEY_LEFT) {
-            if (cursorpos > 0) cursorpos -= 1;
-        } else if (presskey == KEY_RIGHT) {
-            if (cursorpos < urllen) cursorpos += 1;
-        } else if (presskey == KEY_BACKSPACE) {
-            if (cursorpos > 0) {
-                int y;
-                urllen -= 1;
-                cursorpos -= 1;
-                for (y = cursorpos; y < urllen; y++) url[y] = url[y + 1];
-            }
-        } else if (presskey == KEY_DELETE) {
-            if (cursorpos < urllen) {
-                int y;
-                for (y = cursorpos; y < urllen; y++) url[y] = url[y+1];
-                urllen -= 1;
-            }
-        } else if (presskey == KEY_QUIT) {
-            result = 0;
-            break;
-        } else if ((presskey > 0x1F) && (presskey < 127)) {
-            if (urllen < maxlen - 1) {
-                int y;
-                for (y = urllen; y > cursorpos; y--) url[y] = url[y - 1];
-                url[cursorpos] = presskey;
-                urllen += 1;
-                cursorpos += 1;
-            }
+        switch (presskey) {
+            case KEY_ESCAPE:
+            case KEY_TAB:
+            case KEY_QUIT:
+                result = 0;
+                goto exit;
+            case KEY_HOME:
+                cursorpos = 0;
+                break;
+            case KEY_END:
+                cursorpos = len;
+                break;
+            case KEY_ENTER:
+                result = -1;
+                goto exit;
+            case KEY_LEFT:
+                if (cursorpos > 0)
+                    cursorpos--;
+                break;
+            case KEY_RIGHT:
+                if (cursorpos < len)
+                    cursorpos++;
+                break;
+            case KEY_BACKSPACE:
+                if (cursorpos > 0) {
+                    len--;
+                    cursorpos--;
+                    for (i = cursorpos; i <= len; i++)
+                        str[i] = str[i+1];
+                }
+                break;
+            case KEY_DELETE:
+                if (cursorpos < len) {
+                    for (i = cursorpos; i <= len; i++)
+                        str[i] = str[i+1];
+                    len--;
+                }
+                break;
+            default:
+                if ((presskey > 0x1F) && (presskey < 127)) {
+                    if (len < maxlen - 1) {
+                        for (i = len; i > cursorpos; i--)
+                            str[i] = str[i-1];
+                        str[cursorpos] = presskey;
+                        len++;
+                        str[len] = '\0';
+                        cursorpos++;
+                    }
+                }
         }
     }
+
+exit:
     ui_cursor_hide();
     return result;
 }

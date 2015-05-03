@@ -60,7 +60,7 @@ void draw_urlbar(struct historytype *history, struct gopherusconfig *cfg);
 void draw_statusbar(char *origmsg, struct gopherusconfig *cfg);
 
 /* edits a string on screen. returns 0 if the string hasn't been modified, non-zero otherwise. */
-int editstring(char *url, int maxlen, int maxdisplaylen, int xx, int yy, int attr);
+int editstring(char *str, int maxlen, int maxdisplaylen, int x, int y, int attr);
 
 /* returns 0 if a new URL has been entered, non-zero otherwise */
 int edit_url(struct historytype **history, struct gopherusconfig *cfg);
