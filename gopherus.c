@@ -122,7 +122,6 @@ static long loadfile_buff(int protocol, char *hostaddr, unsigned int hostport, c
     char statusmsg[128];
     FILE *fd = NULL;
     int headersdone = 0; /* used notably for HTTP, to localize the end of headers */
-    struct net_tcpsocket *sock;
     time_t lastactivity, curtime;
     if (hostaddr[0] == '#') { /* embedded start page */
         reslength = load_embedded_page(buffer, hostaddr + 1);
@@ -159,8 +158,7 @@ static long loadfile_buff(int protocol, char *hostaddr, unsigned int hostport, c
     sprintf(statusmsg, "Connecting to %d.%d.%d.%d...", (int)(ipaddr >> 24) & 0xFF, (int)(ipaddr >> 16) & 0xFF, (int)(ipaddr >> 8) & 0xFF, (int)(ipaddr & 0xFF));
     draw_statusbar(statusmsg, cfg);
 
-    sock = net_connect(ipaddr, hostport);
-    if (sock == NULL) {
+    if (net_connect(ipaddr, hostport) != 0) {
         set_statusbar(statusbar, "!Connection error!");
         return -1;
     }
@@ -169,9 +167,9 @@ static long loadfile_buff(int protocol, char *hostaddr, unsigned int hostport, c
     } else { /* gopher */
         sprintf(buffer, "%s\r\n", selector);
     }
-    if (net_send(sock, buffer, strlen(buffer)) != (int)strlen(buffer)) {
+    if (net_send(buffer, strlen(buffer)) != (int)strlen(buffer)) {
         set_statusbar(statusbar, "!send() error!");
-        net_close(sock);
+        net_close();
         return -1;
     }
     /* prepare timers */
@@ -183,14 +181,14 @@ static long loadfile_buff(int protocol, char *hostaddr, unsigned int hostport, c
         if (fd != NULL) {
             set_statusbar(statusbar, "!File already exists! Operation aborted.");
             fclose(fd);
-            net_abort(sock);
+            net_abort();
             return -1;
         }
         fd = fopen(filename, "wb"); /* now open for write - this will create the file */
         if (fd == NULL) { /* this should not fail */
             set_statusbar(statusbar, "!Error: could not create the file on disk!");
             fclose(fd);
-            net_abort(sock);
+            net_abort();
             return -1;
         }
     }
@@ -202,7 +200,7 @@ static long loadfile_buff(int protocol, char *hostaddr, unsigned int hostport, c
             reslength = -1;
             break;
         }
-        byteread = net_recv(sock, buffer + (reslength - fdlen), buffer_max + fdlen - reslength);
+        byteread = net_recv(buffer + (reslength - fdlen), buffer_max + fdlen - reslength);
         curtime = time(NULL);
         if (byteread < 0) break; /* end of connection */
         if (ui_kbhit() != 0) { /* a key has been pressed - read it */
@@ -256,9 +254,9 @@ static long loadfile_buff(int protocol, char *hostaddr, unsigned int hostport, c
     if (reslength >= 0) {
         statusmsg[0] = 0;
         draw_statusbar(statusmsg, cfg);
-        net_close(sock);
+        net_close();
     } else {
-        net_abort(sock);
+        net_abort();
     }
 
     if (fd != NULL) { /* finish the buffer */

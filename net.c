@@ -16,7 +16,10 @@
 
 #include "net.h"
 
-#define BUFFERSIZE  2048
+#define SKBUF_SIZE 2048
+
+static tcp_Socket g_sk;
+static char *g_skbuf;
 
 unsigned long net_dnsresolve(const char *name)
 {
@@ -59,74 +62,53 @@ int net_init(void)
 {
     tzset();
     _printf = dummy_printf;  /* this is to avoid watt32 printing its stuff to console */
+    g_skbuf = malloc(SKBUF_SIZE);
     return sock_init();
 }
 
-struct net_tcpsocket *net_connect(unsigned long ipaddr, int port)
+int net_connect(unsigned long ipaddr, unsigned short port)
 {
-    struct net_tcpsocket *resultsock;
     int status = 0;
-    int *statusptr = &status;
 
-    resultsock = malloc(sizeof *resultsock);
-    resultsock->buffersize = BUFFERSIZE;
-    resultsock->buffer = malloc(resultsock->buffersize);
-    resultsock->sock   = malloc(sizeof (tcp_Socket));
+    if (!tcp_open(&g_sk, 0, ipaddr, port, NULL))
+        return -1;
 
-    if (!tcp_open(resultsock->sock, 0, ipaddr, port, NULL)) {
-        free(resultsock->buffer);
-        free(resultsock->sock);
-        free(resultsock);
-        return NULL;
-    }
-
-    sock_setbuf (resultsock->sock, resultsock->buffer, resultsock->buffersize);
-    sock_wait_established (resultsock->sock, sock_delay, NULL, &status);
-    sock_tick (resultsock->sock, statusptr);      /* in case they sent reset */
-    return resultsock;
-
+    sock_setbuf(&g_sk, g_skbuf, SKBUF_SIZE);
+    sock_wait_established(&g_sk, sock_delay, NULL, NULL);
+    sock_tick(&g_sk, &status); /* in case they sent reset */
+    return 0;
 sock_err:
-    free(resultsock->buffer);
-    free(resultsock->sock);
-    free(resultsock);
-    return NULL;
+    return -1;
 }
 
-int net_send(struct net_tcpsocket *socket, char *line, int len)
+int net_send(const char *buf, int len)
 {
-    int res;
     int status = 0;
-    int *statusptr = &status;
-    res = sock_write(socket->sock, line, len);
-    sock_tick (socket->sock, statusptr);   /* call this to let WatTCP hanle its internal stuff */
+    int res = sock_write(&g_sk, buf, len);
+    sock_tick(&g_sk, &status); /* call this to let WatTCP handle its internal stuff */
     return res;
 sock_err:
     return -1;
 }
 
-int net_recv(struct net_tcpsocket *socket, char *buff, int maxlen)
+int net_recv(char *buf, int maxlen)
 {
-    int i;
     int status = 0;
-    int *statusptr = &status;
-    sock_tick (socket->sock, statusptr);  /* call this to let WatTCP hanle its internal stuff */
-    i = sock_fastread(socket->sock, buff, maxlen);
-    return i;
+    sock_tick(&g_sk, &status); /* call this to let WatTCP handle its internal stuff */
+    return sock_fastread(&g_sk, buf, maxlen);
 sock_err:
     return -1;
 }
 
-void net_close(struct net_tcpsocket *socket)
+void net_close(void)
 {
-    int status = 0;
-    sock_close(socket->sock);
-    sock_wait_closed(socket->sock, sock_delay, NULL, &status);
+    sock_close(&g_sk);
+    sock_wait_closed(&g_sk, sock_delay, NULL, NULL);
 sock_err:
-    free(socket);
+    return;
 }
 
-void net_abort(struct net_tcpsocket *socket)
+void net_abort(void)
 {
-    sock_abort(socket->sock);
-    free(socket);
+    sock_abort(&g_sk);
 }

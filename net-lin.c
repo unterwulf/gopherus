@@ -16,9 +16,7 @@
 
 #include "net.h"
 
-struct netwrap {
-    int fd;
-};
+static int g_sk;
 
 unsigned long net_dnsresolve(const char *name)
 {
@@ -31,74 +29,54 @@ int net_init(void)
     return 0;
 }
 
-struct net_tcpsocket *net_connect(unsigned long ipaddr, int port)
+int net_connect(unsigned long ipaddr, unsigned short port)
 {
-    struct netwrap *s;
     struct sockaddr_in remote;
-    struct net_tcpsocket *result;
     char ipstr[64];
 
     sprintf(ipstr, "%lu.%lu.%lu.%lu", (ipaddr >> 24) & 0xFF, (ipaddr >> 16) & 0xFF, (ipaddr >> 8) & 0xFF, ipaddr & 0xFF);
-    s = malloc(sizeof *s);
 
-    if (s == NULL)
-        return NULL;
-
-    s->fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (s->fd < 0) {
-        free(s);
-        return NULL;
-    }
-
-    result = malloc(sizeof *result);
-    if (result == NULL) {
-        close(s->fd);
-        free(s);
-        return NULL;
-    }
+    g_sk = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (g_sk < 0)
+        return -1;
 
     remote.sin_family = AF_INET;  /* Proto family (IPv4) */
     inet_pton(AF_INET, ipstr, (void *)(&remote.sin_addr.s_addr)); /* set dst IP address */
     remote.sin_port = htons(port); /* set the dst port */
 
-    if (connect(s->fd, (struct sockaddr *)&remote, sizeof remote) < 0) {
-        close(s->fd);
-        free(s);
-        free(result);
-        return NULL;
+    if (connect(g_sk, (struct sockaddr *)&remote, sizeof remote) < 0) {
+        close(g_sk);
+        return -1;
     }
 
-    result->sock = s;
-
-    return result;
+    return 0;
 }
 
-int net_send(struct net_tcpsocket *socket, char *line, int len)
+int net_send(const char *buf, int len)
 {
-    return send(((struct netwrap *)(socket->sock))->fd, line, len, 0);
+    return send(g_sk, buf, len, 0);
 }
 
-int net_recv(struct net_tcpsocket *socket, char *buff, int maxlen)
+int net_recv(char *buf, int maxlen)
 {
     int res;
     fd_set rfds;
     struct timeval tv;
-    int realsocket = ((struct netwrap *)socket->sock)->fd;
 
     /* Use select() to wait up to 100ms if nothing awaits on the socket (spares some CPU time) */
     FD_ZERO(&rfds);
-    FD_SET(realsocket, &rfds);
+    FD_SET(g_sk, &rfds);
     tv.tv_sec = 0;
     tv.tv_usec = 100000;
 
-    res = select(realsocket + 1, &rfds, NULL, NULL, &tv);
+    res = select(g_sk + 1, &rfds, NULL, NULL, &tv);
     if (res < 0)
         return -1;
     if (res == 0)
         return 0;
 
     /* read the stuff now (if any) */
-    res = recv(realsocket, buff, maxlen, MSG_DONTWAIT);
+    res = recv(g_sk, buf, maxlen, MSG_DONTWAIT);
     if (res < 0) {
         if (errno == EAGAIN) return 0;
         if (errno == EWOULDBLOCK) return 0;
@@ -110,13 +88,12 @@ int net_recv(struct net_tcpsocket *socket, char *buff, int maxlen)
     return res;
 }
 
-void net_close(struct net_tcpsocket *socket)
+void net_close(void)
 {
-    close(((struct netwrap *)(socket->sock))->fd);
-    free(socket->sock);
+    close(g_sk);
 }
 
-void net_abort(struct net_tcpsocket *socket)
+void net_abort(void)
 {
-    net_close(socket);
+    net_close();
 }

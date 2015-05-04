@@ -18,25 +18,25 @@ int net_init(void)
     return 0;
 }
 
-struct net_tcpsocket *net_connect(unsigned long ipaddr, int port)
+int net_connect(unsigned long ipaddr, unsigned short port)
 {
-    return NULL;
+    return 0;
 }
 
-int net_send(struct net_tcpsocket *socket, char *line, int len)
-{
-    return -1;
-}
-
-int net_recv(struct net_tcpsocket *socket, char *buff, int maxlen)
+int net_send(const char *buf, int len)
 {
     return -1;
 }
 
-void net_close(struct net_tcpsocket *socket)
+int net_recv(char *buf, int maxlen)
+{
+    return -1;
+}
+
+void net_close(void)
 {
 }
 
-void net_abort(struct net_tcpsocket *socket)
+void net_abort(void)
 {
 }
