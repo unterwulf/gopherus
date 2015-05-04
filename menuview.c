@@ -253,7 +253,7 @@ int display_menu(struct gopherus *g)
                         sprintf(query, "Enter a query: ");
                         draw_statusbar(query, &(g->cfg));
                         query[0] = 0;
-                        if (editstring(query, 64, 64, 15, ui_getrowcount() - 1, g->cfg.attr_statusbarinfo) == 0) break;
+                        if (editstring(query, 64, 64, 15, ui_getrowcount() - 1, g->cfg.attr_statusbarinfo, NULL) == 0) break;
                         finalselector = malloc(strlen(line_selector[*selectedline]) + strlen(query) + 2); /* add 1 for the TAB, and 1 for the NULL terminator */
                         if (finalselector == NULL) {
                             set_statusbar(g->statusbar, "Out of memory");

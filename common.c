@@ -66,12 +66,13 @@ void draw_statusbar(char *origmsg, struct gopherusconfig *cfg)
 }
 
 /* edits a string on screen. returns 0 if the string hasn't been modified, non-zero otherwise. */
-int editstring(char *str, int maxlen, int maxdisplaylen, int x, int y, int attr)
+int editstring(char *str, int maxlen, int maxdisplaylen, int x, int y, int attr, const char *prefix)
 {
     int i, presskey;
     int len = strlen(str);
     int cursorpos = len;
     int result = 0;
+    int is_first_keypress = 1;
 
     ui_cursor_show();
 
@@ -131,6 +132,15 @@ int editstring(char *str, int maxlen, int maxdisplaylen, int x, int y, int attr)
                 break;
             default:
                 if ((presskey > 0x1F) && (presskey < 127)) {
+                    if (is_first_keypress) {
+                        if (prefix) {
+                            cursorpos = len = strlen(prefix);
+                            memcpy(str, prefix, len + 1);
+                        } else {
+                            cursorpos = len = 0;
+                            str[len] = '\0';
+                        }
+                    }
                     if (len < maxlen - 1) {
                         for (i = len; i > cursorpos; i--)
                             str[i] = str[i-1];
@@ -141,6 +151,7 @@ int editstring(char *str, int maxlen, int maxdisplaylen, int x, int y, int attr)
                     }
                 }
         }
+        is_first_keypress = 0;
     }
 
 exit:
@@ -157,7 +168,7 @@ int edit_url(struct historytype **history, struct gopherusconfig *cfg)
     if (urllen < 0)
         return -1;
 
-    if (editstring(url, 256, 78, 1, 0, cfg->attr_urlbar) != 0) {
+    if (editstring(url, 256, 78, 1, 0, cfg->attr_urlbar, "gopher://") != 0) {
         char itemtype;
         char hostaddr[256];
         char selector[256];

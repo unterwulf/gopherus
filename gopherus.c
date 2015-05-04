@@ -355,7 +355,7 @@ static void mainloop(struct gopherus *g)
             ui_cputs(prompt, 0x70, 0, ui_getrowcount() - 1);
             if (lastslash)
                 strncpy(filename, lastslash + 1, sizeof filename - 1);
-            if (editstring(filename, 63, 63, sizeof prompt - 1, ui_getrowcount() - 1, 0x70) != 0) {
+            if (editstring(filename, 63, 63, sizeof prompt - 1, ui_getrowcount() - 1, 0x70, NULL) != 0) {
                 loadfile_buff(g->history->protocol, g->history->host, g->history->port, g->history->selector, g->buf, buffersize, g->statusbar, filename, &g->cfg);
             }
             history_back(&(g->history));
