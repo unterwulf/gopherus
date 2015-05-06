@@ -130,7 +130,7 @@ int is_int_pending(void)
 
 /* downloads a gopher or http resource and write it to a file or a memory buffer. if *filename is not NULL, the resource will
    be written in the file (but a valid *buffer is still required) */
-static long loadfile_buff(int protocol, char *hostaddr, unsigned int hostport, char *selector, char *buffer, long buffer_max, char *statusbar, char *filename, struct gopherusconfig *cfg)
+static long loadfile_buff(const struct url *url, char *buffer, long buffer_max, char *statusbar, char *filename, struct gopherusconfig *cfg)
 {
     unsigned long int ipaddr;
     long reslength, byteread, fdlen = 0;
@@ -138,8 +138,8 @@ static long loadfile_buff(int protocol, char *hostaddr, unsigned int hostport, c
     FILE *fd = NULL;
     int headersdone = 0; /* used notably for HTTP, to localize the end of headers */
     time_t lastactivity, curtime;
-    if (hostaddr[0] == '#') { /* embedded start page */
-        reslength = load_embedded_page(buffer, hostaddr + 1);
+    if (url->host[0] == '#') { /* embedded start page */
+        reslength = load_embedded_page(buffer, url->host + 1);
         /* open file, if downloading to a file */
         if (filename != NULL) {
             fd = fopen(filename, "rb"); /* try to open for read - this should fail */
@@ -159,28 +159,28 @@ static long loadfile_buff(int protocol, char *hostaddr, unsigned int hostport, c
         }
         return reslength;
     }
-    ipaddr = dnscache_ask(hostaddr);
+    ipaddr = dnscache_ask(url->host);
     if (ipaddr == 0) {
-        sprintf(statusmsg, "Resolving '%s'...", hostaddr);
+        sprintf(statusmsg, "Resolving '%s'...", url->host);
         draw_statusbar(statusmsg, cfg);
-        ipaddr = net_dnsresolve(hostaddr);
+        ipaddr = net_dnsresolve(url->host);
         if (ipaddr == 0) {
             set_statusbar(statusbar, "!DNS resolution failed!");
             return -1;
         }
-        dnscache_add(hostaddr, ipaddr);
+        dnscache_add(url->host, ipaddr);
     }
     sprintf(statusmsg, "Connecting to %d.%d.%d.%d...", (int)(ipaddr >> 24) & 0xFF, (int)(ipaddr >> 16) & 0xFF, (int)(ipaddr >> 8) & 0xFF, (int)(ipaddr & 0xFF));
     draw_statusbar(statusmsg, cfg);
 
-    if (net_connect(ipaddr, hostport) != 0) {
+    if (net_connect(ipaddr, url->port) != 0) {
         set_statusbar(statusbar, "!Connection error!");
         return -1;
     }
-    if (protocol == PARSEURL_PROTO_HTTP) { /* http */
-        sprintf(buffer, "GET /%s HTTP/1.0\r\nHOST: %s\r\nUSER-AGENT: Gopherus v" VERSION "\r\n\r\n", selector, hostaddr);
+    if (url->protocol == PARSEURL_PROTO_HTTP) { /* http */
+        sprintf(buffer, "GET /%s HTTP/1.0\r\nHOST: %s\r\nUSER-AGENT: Gopherus v" VERSION "\r\n\r\n", url->selector, url->host);
     } else { /* gopher */
-        sprintf(buffer, "%s\r\n", selector);
+        sprintf(buffer, "%s\r\n", url->selector);
     }
     if (net_send(buffer, strlen(buffer)) != (int)strlen(buffer)) {
         set_statusbar(statusbar, "!send() error!");
@@ -229,7 +229,7 @@ static long loadfile_buff(int protocol, char *hostaddr, unsigned int hostport, c
             lastactivity = curtime;
             reslength += byteread;
             /* if protocol is http, ignore headers */
-            if ((protocol == PARSEURL_PROTO_HTTP) && (headersdone == 0)) {
+            if ((url->protocol == PARSEURL_PROTO_HTTP) && (headersdone == 0)) {
                 int i;
                 for (i = 0; i < reslength - 2; i++) {
                     if (buffer[i] == '\n') {
@@ -294,14 +294,16 @@ static void mainloop(struct gopherus *g)
     int bufferlen;
 
     for (;;) {
-        if ((g->history->itemtype == GOPHER_ITEM_FILE) ||
-            (g->history->itemtype == GOPHER_ITEM_DIR) ||
-            (g->history->itemtype == GOPHER_ITEM_INDEX_SEARCH_SERVER) ||
-            (g->history->itemtype == GOPHER_ITEM_HTML)) { /* if it's a displayable item type... */
-            draw_urlbar(g->history, &g->cfg);
+        struct url *url = &(g->history->url); /* a shortcut */
+
+        if ((url->itemtype == GOPHER_ITEM_FILE) ||
+            (url->itemtype == GOPHER_ITEM_DIR) ||
+            (url->itemtype == GOPHER_ITEM_INDEX_SEARCH_SERVER) ||
+            (url->itemtype == GOPHER_ITEM_HTML)) { /* if it's a displayable item type... */
+            draw_urlbar(url, &g->cfg);
 
             if (g->history->cache == NULL) { /* reload the resource if not in cache already */
-                bufferlen = loadfile_buff(g->history->protocol, g->history->host, g->history->port, g->history->selector, g->buf, buffersize, g->statusbar, NULL, &g->cfg);
+                bufferlen = loadfile_buff(url, g->buf, buffersize, g->statusbar, NULL, &g->cfg);
                 if (bufferlen < 0) {
                     history_back(&g->history);
                     continue;
@@ -318,7 +320,7 @@ static void mainloop(struct gopherus *g)
                 }
             }
 
-            switch (g->history->itemtype) {
+            switch (url->itemtype) {
                 case GOPHER_ITEM_FILE: /* text file */
                     exitflag = display_text(g, TXT_FORMAT_RAW);
                     break;
@@ -349,14 +351,14 @@ static void mainloop(struct gopherus *g)
         } else { /* the itemtype is not one of the internally displayable types -> ask to download it */
             char filename[64] = {0};
             static const char prompt[] = "Download as: ";
-            char *lastslash = strrchr(g->history->selector, '/');
+            char *lastslash = strrchr(url->selector, '/');
             set_statusbar(filename, ""); /* make sure to clear out the status bar */
             draw_statusbar(filename, &g->cfg);
             ui_cputs(prompt, 0x70, 0, ui_getrowcount() - 1);
             if (lastslash)
                 strncpy(filename, lastslash + 1, sizeof filename - 1);
             if (editstring(filename, 63, 63, sizeof prompt - 1, ui_getrowcount() - 1, 0x70, NULL) != 0) {
-                loadfile_buff(g->history->protocol, g->history->host, g->history->port, g->history->selector, g->buf, buffersize, g->statusbar, filename, &g->cfg);
+                loadfile_buff(url, g->buf, buffersize, g->statusbar, filename, &g->cfg);
             }
             history_back(&(g->history));
         }
@@ -366,6 +368,9 @@ static void mainloop(struct gopherus *g)
 int main(int argc, char **argv)
 {
     struct gopherus g;
+    struct url start_url;
+    char start_url_str[] = "gopher://#welcome";
+
     memset(&g, '\0', sizeof g);
 
     /* Load configuration (or defaults) */
@@ -373,25 +378,20 @@ int main(int argc, char **argv)
 
     ui_init();
 
-    if (history_add(&g.history,
-                    PARSEURL_PROTO_GOPHER,
-                    "#welcome",
-                    70,
-                    GOPHER_ITEM_DIR,
-                    "") != 0) {
+    parse_url(start_url_str, &start_url);
+
+    if (history_add(&g.history, &start_url) != 0) {
         ui_puts("Out of memory.");
         return 2;
     }
 
     if (argc > 1) { /* if some params have been received, parse them */
-        char itemtype;
-        char hostaddr[1024];
-        char selector[1024];
-        int hostport, i;
-        int protocol;
+        int i;
         int goturl = 0;
 
         for (i = 1; i < argc; i++) {
+            struct url next_url;
+
             if ((argv[i][0] == '/') || (argv[i][0] == '-')) { /* unknown parameter */
                 ui_puts("Gopherus v" VERSION " Copyright (C) Mateusz Viste " DATE);
                 ui_puts("");
@@ -403,12 +403,12 @@ int main(int argc, char **argv)
                 ui_puts("Invalid parameters list.");
                 return 1;
             }
-            if ((protocol = parsegopherurl(argv[1], hostaddr, &hostport, &itemtype, selector)) < 0) {
+            if (parse_url(argv[1], &next_url) != 0) {
                 ui_puts("Invalid URL!");
                 return 1;
             }
             goturl = 1;
-            history_add(&g.history, protocol, hostaddr, hostport, itemtype, selector);
+            history_add(&g.history, &next_url);
             if (g.history == NULL) {
                 ui_puts("Out of memory.");
                 return 2;

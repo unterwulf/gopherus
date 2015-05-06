@@ -78,20 +78,17 @@ static int display_text_loop(struct gopherus *g)
                     return DISPLAY_ORDER_QUIT;
                 break;
             case KEY_F1: /* help */
-                history_add(&(g->history),
-                            PARSEURL_PROTO_GOPHER,
-                            "#manual", 70, GOPHER_ITEM_FILE, "");
+                go_to_help(g);
                 return DISPLAY_ORDER_NONE;
             case KEY_F5: /* refresh */
                 return DISPLAY_ORDER_REFR;
             case KEY_F9: /* download */
-                history_add(&(g->history),
-                            g->history->protocol,
-                            g->history->host,
-                            g->history->port,
-                            GOPHER_ITEM_BINARY,
-                            g->history->selector);
+            {
+                struct url download_url = g->history->url;
+                download_url.itemtype = GOPHER_ITEM_BINARY;
+                history_add(&(g->history), &download_url);
                 return DISPLAY_ORDER_NONE;
+            }
             case KEY_UP:
                 scroll = -1;
                 break;

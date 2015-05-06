@@ -36,10 +36,10 @@ void set_statusbar(char *buf, char *msg)
     }
 }
 
-void draw_urlbar(struct historytype *history, struct gopherusconfig *cfg)
+void draw_urlbar(struct url *url, struct gopherusconfig *cfg)
 {
     char urlstr[80];
-    int url_len = build_url(urlstr, 79, history->protocol, history->host, history->port, history->itemtype, history->selector);
+    int url_len = build_url(urlstr, sizeof urlstr, url);
 
     ui_putchar('[', cfg->attr_urlbardeco, 0, 0);
     draw_field(urlstr, cfg->attr_urlbar, 1, 0, 78, url_len);
@@ -163,25 +163,21 @@ exit:
 int edit_url(struct historytype **history, struct gopherusconfig *cfg)
 {
     char url[256];
-    int urllen = build_url(url, 256, (*history)->protocol, (*history)->host, (*history)->port, (*history)->itemtype, (*history)->selector);
+    int urllen = build_url(url, sizeof url, &((*history)->url));
 
     if (urllen < 0)
         return -1;
 
     if (editstring(url, 256, 78, 1, 0, cfg->attr_urlbar, "gopher://") != 0) {
-        char itemtype;
-        char hostaddr[256];
-        char selector[256];
-        int hostport;
-        int protocol;
-        if ((protocol = parsegopherurl(url, hostaddr, &hostport, &itemtype, selector)) >= 0) {
-            history_add(history, protocol, hostaddr, hostport, itemtype, selector);
-            draw_urlbar(*history, cfg);
+        struct url new_url;
+        if (parse_url(url, &new_url) == 0) {
+            history_add(history, &new_url);
+            draw_urlbar(&((*history)->url), cfg);
             return 0;
         }
     }
 
-    draw_urlbar(*history, cfg); /* the url didn't changed - redraw it and forget about the whole thing */
+    draw_urlbar(&((*history)->url), cfg); /* the url didn't changed - redraw it and forget about the whole thing */
     return -1;
 }
 
@@ -199,4 +195,12 @@ int ask_quit_confirmation(struct gopherusconfig *cfg)
     } while (keypress == 0x00);
 
     return ((keypress == KEY_ESCAPE) || (keypress == KEY_QUIT));
+}
+
+void go_to_help(struct gopherus *g)
+{
+    struct url help_url;
+    char help_url_str[] = "gopher://#manual/0";
+    parse_url(help_url_str, &help_url);
+    history_add(&(g->history), &help_url);
 }

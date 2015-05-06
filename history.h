@@ -6,15 +6,13 @@
 #ifndef HISTORY_H
 #define HISTORY_H
 
+#include "parseurl.h"
+
 struct historytype {
+    struct url url;
     long cachesize;
-    char *host;
-    char *selector;
     char *cache;
     struct historytype *next;
-    unsigned int port;
-    char protocol;
-    char itemtype;
     int displaymemory[2];  /* used by some display plugins to remember how the item was displayed. this is always initialized to -1 values */
 };
 
@@ -22,7 +20,7 @@ struct historytype {
 void history_back(struct historytype **history);
 
 /* adds a new node to the history list. Returns 0 on success, non-zero otherwise. */
-int history_add(struct historytype **history, char protocol, char *host, unsigned int port, char itemtype, char *selector);
+int history_add(struct historytype **history, const struct url *new_url);
 
 /* free cache content past latest maxallowedcache bytes */
 void history_cleanupcache(struct historytype *history);

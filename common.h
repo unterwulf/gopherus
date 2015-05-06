@@ -57,7 +57,7 @@ void set_statusbar(char *buf, char *msg);
 
 void draw_field(const char *str, int attr, int x, int y, int width, int len);
 
-void draw_urlbar(struct historytype *history, struct gopherusconfig *cfg);
+void draw_urlbar(struct url *url, struct gopherusconfig *cfg);
 
 void draw_statusbar(char *origmsg, struct gopherusconfig *cfg);
 
@@ -69,5 +69,7 @@ int edit_url(struct historytype **history, struct gopherusconfig *cfg);
 
 /* Asks for a confirmation to quit. Returns 0 if Quit aborted, non-zero otherwise. */
 int ask_quit_confirmation(struct gopherusconfig *cfg);
+
+void go_to_help(struct gopherus *g);
 
 #endif

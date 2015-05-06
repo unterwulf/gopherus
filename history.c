@@ -5,6 +5,7 @@
 
 #include <stdlib.h>  /* malloc(), NULL */
 #include <string.h>  /* strcasecmp(), ... */
+#include "parseurl.h"
 #include "gopher.h"
 #include "history.h"
 
@@ -14,10 +15,10 @@ static void history_free_node(struct historytype *node)
 {
     if (node->cache != NULL)
         free(node->cache);
-    if (node->selector != NULL)
-        free(node->selector);
-    if (node->host != NULL)
-        free(node->host);
+    if (node->url.selector != NULL)
+        free(node->url.selector);
+    if (node->url.host != NULL)
+        free(node->url.host);
     free(node);
 }
 
@@ -35,7 +36,7 @@ void history_back(struct historytype **history)
     }
 
     /* check if the last request was a query, and if not in cache, put a message instead to avoid reloading a query again */
-    if (((*history)->itemtype == GOPHER_ITEM_INDEX_SEARCH_SERVER) &&
+    if (((*history)->url.itemtype == GOPHER_ITEM_INDEX_SEARCH_SERVER) &&
         ((*history)->cache == NULL)) {
         char *msg = "3Query not in cache\ni\niThis location is not avaiable in the local cache. Gopherus is not reissuing custom queries automatically. If you wish to force a reload, press F5.\n";
         (*history)->cachesize = strlen(msg);
@@ -49,18 +50,18 @@ void history_back(struct historytype **history)
 }
 
 /* adds a new node to the history list. Returns 0 on success, non-zero otherwise. */
-int history_add(struct historytype **history, char protocol, char *host, unsigned int port, char itemtype, char *selector)
+int history_add(struct historytype **history, const struct url *new_url)
 {
     struct historytype *result;
 
     /* shortcut - if the new node is identical to the previous page, the user is doing a 'back' action */
     if (*history != NULL) { /* do we have any history at all? */
         if ((*history)->next != NULL) { /* is there a 'previous' position? */
-            if (protocol == (*history)->next->protocol) { /* same protocol */
-                if (strcasecmp(host, (*history)->next->host) == 0) { /* same host */
-                    if (port == (*history)->next->port) { /* same port */
-                        if (itemtype == (*history)->next->itemtype) { /* same itemtype */
-                            if (strcmp(selector, (*history)->next->selector) == 0) { /* same resource */
+            if (new_url->protocol == (*history)->next->url.protocol) { /* same protocol */
+                if (strcasecmp(new_url->host, (*history)->next->url.host) == 0) { /* same host */
+                    if (new_url->port == (*history)->next->url.port) { /* same port */
+                        if (new_url->itemtype == (*history)->next->url.itemtype) { /* same itemtype */
+                            if (strcmp(new_url->selector, (*history)->next->url.selector) == 0) { /* same resource */
                                 history_back(history); /* do a 'back' action in the history list */
                                 return 0;  /* return success */
                             }
@@ -73,19 +74,19 @@ int history_add(struct historytype **history, char protocol, char *host, unsigne
     /* add the node */
     result = malloc(sizeof *result);
     if (result == NULL) return -1;
-    result->host = strdup(host);
-    if (result->host == NULL) {
+    result->url.host = strdup(new_url->host);
+    if (result->url.host == NULL) {
         free(result);
         return -1;
     }
-    result->protocol = protocol;
-    result->port = port;
-    result->itemtype = itemtype;
+    result->url.protocol = new_url->protocol;
+    result->url.port = new_url->port;
+    result->url.itemtype = new_url->itemtype;
     result->displaymemory[0] = -1;
     result->displaymemory[1] = -1;
-    result->selector = strdup(selector);
-    if (result->selector == NULL) {
-        free(result->host);
+    result->url.selector = strdup(new_url->selector);
+    if (result->url.selector == NULL) {
+        free(result->url.host);
         free(result);
         return -1;
     }

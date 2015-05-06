@@ -8,103 +8,103 @@
 #include "gopher.h"
 #include "parseurl.h"
 
-int parsegopherurl(char *url, char *host, int *port, char *itemtype, char *selector)
+int parse_url(char *url_str, struct url *url)
 {
     int parserstate = 0;
-    int protocol = PARSEURL_PROTO_GOPHER, x;
-    char *curtoken;
+    char *port_str;
+    size_t i;
+
+    memset(url, '\0', sizeof *url);
     /* set default values */
-    *port = 70;
-    *itemtype = GOPHER_ITEM_DIR;
-    *selector = 0;
+    url->protocol = PARSEURL_PROTO_GOPHER;
+    url->port = 70;
+    url->itemtype = GOPHER_ITEM_DIR;
+    url->selector = url_str + strlen(url_str);
+
     /* skip the protocol part, if present */
-    for (x = 0; url[x] != 0; x++) {
-        if (url[x] == '/') { /* no protocol */
-            protocol = PARSEURL_PROTO_GOPHER;
+    for (i = 0; url_str[i] != 0; i++) {
+        if (url_str[i] == '/') { /* no protocol */
+            url->protocol = PARSEURL_PROTO_GOPHER;
             break;
         }
-        if (url[x] == ':') { /* found a colon. check if it's for proto declaration */
-            if (url[x + 1] == '/') {
-                if (url[x + 2] == '/') {
-                    char *protostr = url;
-                    url[x] = 0;
-                    url += x + 3;
+        if (url_str[i] == ':') { /* found a colon. check if it's for proto declaration */
+            if (url_str[i + 1] == '/') {
+                if (url_str[i + 2] == '/') {
+                    char *protostr = url_str;
+                    url_str[i] = 0;
+                    url_str += i + 3;
                     if (strcasecmp(protostr, "gopher") == 0) {
-                        protocol = PARSEURL_PROTO_GOPHER;
+                        url->protocol = PARSEURL_PROTO_GOPHER;
                     } else if (strcasecmp(protostr, "http") == 0) {
-                        protocol = PARSEURL_PROTO_HTTP;
-                        *port = 80; /* default port is 80 for HTTP */
-                        *itemtype = GOPHER_ITEM_HTML;
+                        url->protocol = PARSEURL_PROTO_HTTP;
+                        url->port = 80; /* default port is 80 for HTTP */
+                        url->itemtype = GOPHER_ITEM_HTML;
                     } else {
-                        protocol = PARSEURL_PROTO_UNKNOWN;
+                        url->protocol = PARSEURL_PROTO_UNKNOWN;
                     }
                     break;
                 }
             }
-            protocol = PARSEURL_PROTO_GOPHER;
+            url->protocol = PARSEURL_PROTO_GOPHER;
             break;
         }
     }
-    /* start reading the url */
-    curtoken = url;
-    for (; parserstate < 4; url += 1) {
+
+    /* start reading the url_str */
+    url->host = url_str;
+
+    for (; parserstate < 4; url_str++) {
         switch (parserstate) {
             case 0:  /* reading host */
-                if (*url == ':') { /* a port will follow */
-                    *host = 0;
-                    curtoken = url + 1;
+                if (*url_str == ':') { /* a port will follow */
+                    *url_str = '\0';
+                    port_str = url_str + 1;
                     parserstate = 1;
-                } else if (*url == '/') { /* gopher type will follow */
-                    *host = 0;
+                } else if (*url_str == '/') { /* gopher type will follow */
+                    *url_str = 0;
                     parserstate = 2;
-                } else if (*url == 0) { /* end of url */
-                    *host = 0;
+                } else if (*url_str == '\0') { /* end of url_str */
                     parserstate = 4;
-                } else { /* still part of the host */
-                    *host = *url;
-                    host += 1;
                 }
                 break;
             case 1:  /* reading port */
-                if (*url == 0) { /* end of url */
-                    *port = atoi(curtoken);
+                if (*url_str == '\0') { /* end of url_str */
+                    url->port = atoi(port_str);
                     parserstate = 4;
-                } else if (*url == '/') {
-                    *url = 0; /* temporary end of string */
-                    *port = atoi(curtoken);
-                    *url = '/'; /* restore the original char */
+                } else if (*url_str == '/') {
+                    *url_str = 0;
+                    url->port = atoi(port_str);
                     parserstate = 2; /* gopher type follows */
                 }
                 break;
             case 2:  /* reading itemtype */
-                if (protocol == PARSEURL_PROTO_GOPHER) { /* if non-Gopher, skip the itemtype */
-                    if (*url != 0) {
-                        *itemtype = *url;
+                if (url->protocol == PARSEURL_PROTO_GOPHER) { /* if non-Gopher, skip the itemtype */
+                    if (*url_str != '\0') {
+                        url->itemtype = *url_str;
                         parserstate = 3;
                     } else {
                         parserstate = 4;
                     }
-                    url += 1;
-                }
-                parserstate = 3; /* go right to the url part now */
-            case 3:
-                if (*url == 0) {
-                    *selector = 0;
-                    parserstate = 4;
                 } else {
-                    *selector = *url;
-                    selector += 1;
+                    parserstate = 3; /* go right to the url_str part now */
+                    url_str--;
                 }
+                break;
+            case 3:
+                url->selector = url_str;
+                parserstate = 4;
                 break;
         }
     }
 
-    return protocol;
+    return (url->protocol == PARSEURL_PROTO_UNKNOWN);
 }
 
-static int build_http_url(char *res, int maxlen, const char *host, int port, const char *selector)
+static int build_http_url(char *res, int maxlen, const struct url *url)
 {
     static const char *protoname = "http://";
+    const char *host = url->host;
+    const char *selector = url->selector;
     int i;
 
     maxlen--;
@@ -116,9 +116,9 @@ static int build_http_url(char *res, int maxlen, const char *host, int port, con
         res[i++] = *host++;
 
     /* port (optional, only if not 80) */
-    if (port != 80 && (i + 6 < maxlen)) {
+    if (url->port != 80 && (i + 6 < maxlen)) {
         res[i++] = ':';
-        i += sprintf(&res[i], "%u", port);
+        i += sprintf(&res[i], "%u", url->port);
     }
 
     if (i < maxlen)
@@ -131,20 +131,22 @@ static int build_http_url(char *res, int maxlen, const char *host, int port, con
     return i;
 }
 
-static int build_gopher_url(char *res, int maxlen, const char *host, int port, char itemtype, char *selector)
+static int build_gopher_url(char *res, int maxlen, const struct url *url)
 {
     static const char *protoname = "gopher://";
+    const char *host = url->host;
+    const char *selector = url->selector;
     int i = 0;
 
     maxlen--;
 
     if (maxlen < 2) return -1;
-    if ((port < 1) || (port > 65535)) return -1;
+    if (url->port < 1) return -1;
     if (!host || !res || !selector) return -1;
-    if (itemtype < 33) return -1;
+    if (url->itemtype < 33) return -1;
 
     /* detect special hURL links */
-    if (itemtype == GOPHER_ITEM_HTML) {
+    if (url->itemtype == GOPHER_ITEM_HTML) {
         if ((strstr(selector, "URL:") == selector) || (strstr(selector, "/URL:") == selector)) {
             if (selector[0] == '/') selector++;
             selector += 4;
@@ -167,16 +169,16 @@ static int build_gopher_url(char *res, int maxlen, const char *host, int port, c
         while (*host && (i < maxlen))
             res[i++] = *host++;
 
-        if (port != 70 && (i + 6 < maxlen)) {
+        if (url->port != 70 && (i + 6 < maxlen)) {
             res[i++] = ':';
-            i += sprintf(&res[i], "%u", port);
+            i += sprintf(&res[i], "%u", url->port);
         }
 
         if (i < maxlen)
             res[i++] = '/';
 
         if (i < maxlen)
-            res[i++] = itemtype;
+            res[i++] = url->itemtype;
 
         for (; *selector && (i < maxlen); selector++) {
             if (((unsigned)*selector <= 0x1F) || ((unsigned)*selector >= 0x80)) { /* encode unsafe chars - RFC 1738: */
@@ -196,9 +198,9 @@ static int build_gopher_url(char *res, int maxlen, const char *host, int port, c
 }
 
 /* computes an URL string from exploded gopher parts, and returns its length. Returns -1 on error. */
-int build_url(char *res, int maxlen, int protocol, char *host, int port, char itemtype, char *selector)
+int build_url(char *res, int maxlen, const struct url *url)
 {
-    return (protocol == PARSEURL_PROTO_HTTP)
-        ? build_http_url(res, maxlen, host, port, selector)
-        : build_gopher_url(res, maxlen, host, port, itemtype, selector);
+    return (url->protocol == PARSEURL_PROTO_HTTP)
+        ? build_http_url(res, maxlen, url)
+        : build_gopher_url(res, maxlen, url);
 }

@@ -38,11 +38,8 @@ int display_menu(struct gopherus *g)
     int endofline;
     long bufferlen;
     char *line_description[1024];
-    char *line_selector[1024];
-    char *line_host[1024];
+    struct url line_url[1024];
     char curURL[512];
-    int line_port[1024];
-    char line_itemtype[1024];
     unsigned char line_description_len[1024];
     int linecount = 0, x, y, column;
     char singlelinebuf[128];
@@ -111,14 +108,15 @@ int display_menu(struct gopherus *g)
                 line_description[linecount] = wrapptr;
                 wrapptr = wordwrap(singlelinebuf, wrapptr, wraplen);
                 line_description_len[linecount] = strlen(singlelinebuf);
-                line_selector[linecount] = selector;
-                line_host[linecount] = host;
-                line_itemtype[linecount] = itemtype;
+                line_url[linecount].protocol = PARSEURL_PROTO_GOPHER;
+                line_url[linecount].selector = selector;
+                line_url[linecount].host = host;
+                line_url[linecount].itemtype = itemtype;
                 if (port != NULL) {
-                    line_port[linecount] = atoi(port);
-                    if (line_port[linecount] < 1) line_port[linecount] = 70;
+                    line_url[linecount].port = atoi(port);
+                    if (line_url[linecount].port < 1) line_url[linecount].port = 70;
                 } else {
-                    line_port[linecount] = 70;
+                    line_url[linecount].port = 70;
                 }
                 linecount += 1;
                 if (wrapptr == NULL) break;
@@ -129,7 +127,7 @@ int display_menu(struct gopherus *g)
 
     /* trim out the last line if its starting with a '.' (gopher's end of menu marker) */
     if (linecount > 0) {
-        if (line_itemtype[linecount - 1] == '.') linecount -= 1;
+        if (line_url[linecount - 1].itemtype == '.') linecount -= 1;
     }
 
     /* if there is at least one position, and nothing is selected yet, make it active */
@@ -139,7 +137,7 @@ int display_menu(struct gopherus *g)
     for (;;) {
         curURL[0] = 0;
         if (*selectedline >= 0) {   /* if any position is selected, print the url in status bar */
-            build_url(curURL, 512, PARSEURL_PROTO_GOPHER, line_host[*selectedline], line_port[*selectedline], line_itemtype[*selectedline], line_selector[*selectedline]);
+            build_url(curURL, sizeof curURL, &line_url[*selectedline]);
             set_statusbar(g->statusbar, curURL);
         }
         /* start drawing lines of the menu */
@@ -155,7 +153,7 @@ int display_menu(struct gopherus *g)
                 } else {
                     attr = g->cfg.attr_menutype;
                 }
-                switch (line_itemtype[x]) {
+                switch (line_url[x].itemtype) {
                     case GOPHER_ITEM_INLINE_MSG: /* message */
                         break;
                     case GOPHER_ITEM_HTML: /* html */
@@ -205,14 +203,14 @@ int display_menu(struct gopherus *g)
                 if (x == *selectedline) {
                     /* attr |= 0x00; */
                     attr = g->cfg.attr_menucurrent;
-                } else if (line_itemtype[x] == GOPHER_ITEM_INLINE_MSG) {
+                } else if (line_url[x].itemtype == GOPHER_ITEM_INLINE_MSG) {
                     /* attr |= 0x07; */
                     attr = g->cfg.attr_textnorm;
-                } else if (line_itemtype[x] == GOPHER_ITEM_ERROR) {
+                } else if (line_url[x].itemtype == GOPHER_ITEM_ERROR) {
                     attr = g->cfg.attr_menuerr;
                     /* attr |= 0x04; */
                 } else {
-                    if (isitemtypeselectable(line_itemtype[x]) != 0) {
+                    if (isitemtypeselectable(line_url[x].itemtype) != 0) {
                         attr = g->cfg.attr_menuselectable;
                         /* attr |= 0x02; */
                     } else {
@@ -247,35 +245,38 @@ int display_menu(struct gopherus *g)
             case KEY_F9:
             case KEY_ENTER:
                 if (*selectedline >= 0) {
-                    if ((line_itemtype[*selectedline] == GOPHER_ITEM_INDEX_SEARCH_SERVER) && (keypress != KEY_F9)) { /* a query needs to be issued */
+                    if ((line_url[*selectedline].itemtype == GOPHER_ITEM_INDEX_SEARCH_SERVER) && (keypress != KEY_F9)) { /* a query needs to be issued */
                         char query[64];
                         char *finalselector;
                         sprintf(query, "Enter a query: ");
                         draw_statusbar(query, &(g->cfg));
                         query[0] = 0;
                         if (editstring(query, 64, 64, 15, ui_getrowcount() - 1, g->cfg.attr_statusbarinfo, NULL) == 0) break;
-                        finalselector = malloc(strlen(line_selector[*selectedline]) + strlen(query) + 2); /* add 1 for the TAB, and 1 for the NULL terminator */
+                        finalselector = malloc(strlen(line_url[*selectedline].selector) + strlen(query) + 2); /* add 1 for the TAB, and 1 for the NULL terminator */
                         if (finalselector == NULL) {
                             set_statusbar(g->statusbar, "Out of memory");
                             break;
                         } else {
-                            sprintf(finalselector, "%s\t%s", line_selector[*selectedline], query);
-                            history_add(&(g->history), PARSEURL_PROTO_GOPHER, line_host[*selectedline], line_port[*selectedline], line_itemtype[*selectedline], finalselector);
+                            struct url final_url = line_url[*selectedline];
+                            sprintf(finalselector, "%s\t%s", line_url[*selectedline].selector, query);
+                            final_url.selector = finalselector;
+                            history_add(&(g->history), &final_url);
                             free(finalselector);
                             return DISPLAY_ORDER_NONE;
                         }
                     } else { /* itemtype is anything else than type 7 */
-                        int tmpproto, tmpport;
-                        char tmphost[512], tmpitemtype, tmpselector[512];
-                        tmpproto = parsegopherurl(curURL, tmphost, &tmpport, &tmpitemtype, tmpselector);
-                        if (keypress == KEY_F9)
-                            tmpitemtype = GOPHER_ITEM_BINARY; /* force the itemtype to 'binary' if 'save as' was requested */
-                        if (tmpproto < 0) {
+                        struct url next_url;
+
+                        if (parse_url(curURL, &next_url) == 0) {
+                            if (keypress == KEY_F9) {
+                                /* force the itemtype to 'binary' if 'save as' was requested */
+                                next_url.itemtype = GOPHER_ITEM_BINARY;
+                            }
+                            history_add(&(g->history), &next_url);
+                            return DISPLAY_ORDER_NONE;
+                        } else {
                             set_statusbar(g->statusbar, "!Unknown protocol");
                             break;
-                        } else {
-                            history_add(&(g->history), tmpproto, tmphost, tmpport, tmpitemtype, tmpselector);
-                            return DISPLAY_ORDER_NONE;
                         }
                     }
                 }
@@ -284,9 +285,7 @@ int display_menu(struct gopherus *g)
                 if (ask_quit_confirmation(&(g->cfg)) != 0) return DISPLAY_ORDER_QUIT;
                 break;
             case KEY_F1: /* help */
-                history_add(&(g->history),
-                            PARSEURL_PROTO_GOPHER,
-                            "#manual", 70, GOPHER_ITEM_FILE, "");
+                go_to_help(g);
                 return DISPLAY_ORDER_NONE;
                 break;
             case KEY_F5: /* refresh */
@@ -298,7 +297,7 @@ int display_menu(struct gopherus *g)
                 break;
             case KEY_UP:
                 if (*selectedline > firstlinkline) {
-                    while (isitemtypeselectable(line_itemtype[--(*selectedline)]) == 0); /* select the next item that is selectable */
+                    while (isitemtypeselectable(line_url[--(*selectedline)].itemtype) == 0); /* select the next item that is selectable */
                 } else {
                     if (*screenlineoffset > 0) *screenlineoffset -= 1;
                     continue; /* do not force the selected line to be on screen */
@@ -321,7 +320,7 @@ int display_menu(struct gopherus *g)
                     continue;
                 }
                 if (*selectedline < lastlinkline) {
-                    while (isitemtypeselectable(line_itemtype[++(*selectedline)]) == 0); /* select the next item that is selectable */
+                    while (isitemtypeselectable(line_url[++(*selectedline)].itemtype) == 0); /* select the next item that is selectable */
                 } else {
                     if (*screenlineoffset < linecount - (ui_getrowcount() - 3)) *screenlineoffset += 1;
                     continue; /* do not force the selected line to be on screen */
