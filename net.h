@@ -6,6 +6,8 @@
 #ifndef NET_H
 #define NET_H
 
+extern int is_int_pending(void);
+
 /* this is a wrapper around the wattcp lookup_host(), but with a small integrated cache */
 unsigned long net_dnsresolve(const char *name);
 

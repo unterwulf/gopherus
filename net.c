@@ -21,6 +21,11 @@
 static tcp_Socket g_sk;
 static char *g_skbuf;
 
+static int is_int_pending_adapter(void *sock)
+{
+    return is_int_pending();
+}
+
 unsigned long net_dnsresolve(const char *name)
 {
     unsigned long hostaddr = 0;
@@ -74,7 +79,7 @@ int net_connect(unsigned long ipaddr, unsigned short port)
         return -1;
 
     sock_setbuf(&g_sk, g_skbuf, SKBUF_SIZE);
-    sock_wait_established(&g_sk, sock_delay, NULL, NULL);
+    sock_wait_established(&g_sk, sock_delay, &is_int_pending_adapter, NULL);
     sock_tick(&g_sk, &status); /* in case they sent reset */
     return 0;
 sock_err:
@@ -103,7 +108,7 @@ sock_err:
 void net_close(void)
 {
     sock_close(&g_sk);
-    sock_wait_closed(&g_sk, sock_delay, NULL, NULL);
+    sock_wait_closed(&g_sk, sock_delay, &is_int_pending_adapter, NULL);
 sock_err:
     return;
 }

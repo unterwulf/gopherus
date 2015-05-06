@@ -113,6 +113,21 @@ static void loadcfg(struct gopherusconfig *cfg)
     cfg->attr_menucurrent = (hex2int(colorstring[16]) << 4) | hex2int(colorstring[17]);
 }
 
+int is_int_pending(void)
+{
+    int res = 0;
+    while (ui_kbhit()) {
+        int key = ui_getkey();
+        switch (key) {
+            case KEY_ESCAPE:
+            case KEY_BACKSPACE:
+                res = 1;
+                break;
+        }
+    }
+    return res;
+}
+
 /* downloads a gopher or http resource and write it to a file or a memory buffer. if *filename is not NULL, the resource will
    be written in the file (but a valid *buffer is still required) */
 static long loadfile_buff(int protocol, char *hostaddr, unsigned int hostport, char *selector, char *buffer, long buffer_max, char *statusbar, char *filename, struct gopherusconfig *cfg)
@@ -203,14 +218,13 @@ static long loadfile_buff(int protocol, char *hostaddr, unsigned int hostport, c
         byteread = net_recv(buffer + (reslength - fdlen), buffer_max + fdlen - reslength);
         curtime = time(NULL);
         if (byteread < 0) break; /* end of connection */
-        if (ui_kbhit() != 0) { /* a key has been pressed - read it */
-            int presskey = ui_getkey();
-            if ((presskey == KEY_ESCAPE) || (presskey == KEY_BACKSPACE)) { /* if it's escape or backspace, abort the connection */
-                set_statusbar(statusbar, "Connection aborted by the user.");
-                reslength = -1;
-                break;
-            }
+
+        if (is_int_pending()) {
+            set_statusbar(statusbar, "Connection aborted by the user.");
+            reslength = -1;
+            break;
         }
+
         if (byteread > 0) {
             lastactivity = curtime;
             reslength += byteread;

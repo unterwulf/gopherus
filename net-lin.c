@@ -7,6 +7,7 @@
 
 #include <stdlib.h>  /* NULL */
 #include <sys/socket.h> /* socket() */
+#include <fcntl.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <stdio.h> /* sprintf() */
@@ -15,6 +16,8 @@
 #include <stdint.h> /* uint32_t */
 
 #include "net.h"
+
+#define POLLING_TIMEOUT_USEC 125000
 
 static int g_sk;
 
@@ -32,19 +35,36 @@ int net_init(void)
 int net_connect(unsigned long ipaddr, unsigned short port)
 {
     struct sockaddr_in remote;
-    char ipstr[64];
 
-    sprintf(ipstr, "%lu.%lu.%lu.%lu", (ipaddr >> 24) & 0xFF, (ipaddr >> 16) & 0xFF, (ipaddr >> 8) & 0xFF, ipaddr & 0xFF);
-
-    g_sk = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    g_sk = socket(AF_INET, SOCK_STREAM | O_NONBLOCK, IPPROTO_TCP);
     if (g_sk < 0)
         return -1;
 
-    remote.sin_family = AF_INET;  /* Proto family (IPv4) */
-    inet_pton(AF_INET, ipstr, (void *)(&remote.sin_addr.s_addr)); /* set dst IP address */
-    remote.sin_port = htons(port); /* set the dst port */
+    remote.sin_family = AF_INET;
+    remote.sin_addr.s_addr = htonl(ipaddr);
+    remote.sin_port = htons(port);
 
     if (connect(g_sk, (struct sockaddr *)&remote, sizeof remote) < 0) {
+        if (errno == EINPROGRESS) {
+            while (!is_int_pending()) {
+                int ret;
+                fd_set wfd;
+                struct timeval tv;
+
+                tv.tv_sec = 0;
+                tv.tv_usec = POLLING_TIMEOUT_USEC;
+                FD_ZERO(&wfd);
+                FD_SET(g_sk, &wfd);
+
+                ret = select(g_sk + 1, NULL, &wfd, NULL, &tv);
+
+                if (ret == 1) {
+                    return 0;
+                } else if (ret < 0 && errno != EINTR) {
+                    break;
+                }
+            }
+        }
         close(g_sk);
         return -1;
     }
@@ -54,7 +74,23 @@ int net_connect(unsigned long ipaddr, unsigned short port)
 
 int net_send(const char *buf, int len)
 {
-    return send(g_sk, buf, len, 0);
+    int ret;
+
+    do {
+        ret = send(g_sk, buf, len, 0);
+
+        if (ret < 0) {
+            if (errno == EINTR ||
+                errno == EAGAIN ||
+                errno == EWOULDBLOCK) {
+                usleep(POLLING_TIMEOUT_USEC);
+            } else {
+                return ret;
+            }
+        }
+    } while (!is_int_pending() && ret < 0);
+
+    return ret;
 }
 
 int net_recv(char *buf, int maxlen)
