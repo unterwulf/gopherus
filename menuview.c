@@ -52,7 +52,6 @@ int display_menu(struct gopherus *g)
     bufferlen = g->history->cachesize;
     memcpy(g->buf, g->history->cache, g->history->cachesize);
     g->buf[bufferlen] = 0;
-    linecount = 0;
 
     for (cursor = g->buf; cursor < (g->buf + bufferlen) ;) {
         itemtype = *cursor;
