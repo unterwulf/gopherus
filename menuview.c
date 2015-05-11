@@ -44,6 +44,8 @@ int display_menu(struct gopherus *g)
     char singlelinebuf[128];
     int *selectedline = &(g->history->displaymemory[0]);
     int *screenlineoffset = &(g->history->displaymemory[1]);
+    int oldline = -1;
+    int oldoffset = -1;
     int firstlinkline = -1, lastlinkline = -1, keypress;
     if (*screenlineoffset < 0) *screenlineoffset = 0;
     /* copy the history content into buffer - we need to do this because we'll perform changes on the data */
@@ -134,103 +136,110 @@ int display_menu(struct gopherus *g)
         *selectedline = firstlinkline;
 
     for (;;) {
-        if (*selectedline >= 0) {   /* if any position is selected, print the url in status bar */
-            char url_str[512];
-            build_url(url_str, sizeof url_str, &line_url[*selectedline]);
-            set_statusbar(g->statusbar, url_str);
-        }
+        if (*selectedline != oldline || *screenlineoffset != oldoffset) {
 
-        /* start drawing lines of the menu */
-        for (x = *screenlineoffset; x < *screenlineoffset + (ui_getrowcount() - 2); x++) {
-            if (x < linecount) {
-                int z, attr;
-                char *prefix = NULL;
-                attr = g->cfg.attr_menuselectable;
-                if (x == *selectedline) { /* change the background if item is selected */
-                    attr = g->cfg.attr_menucurrent;
-                    /* attr &= 0x0F;
-                       attr |= 0x20; */
-                } else {
-                    attr = g->cfg.attr_menutype;
-                }
-                switch (line_url[x].itemtype) {
-                    case GOPHER_ITEM_INLINE_MSG: /* message */
-                        break;
-                    case GOPHER_ITEM_HTML: /* html */
-                        prefix = "HTM";
-                        break;
-                    case GOPHER_ITEM_FILE: /* text */
-                        prefix = "TXT";
-                        break;
-                    case GOPHER_ITEM_DIR:
-                        prefix = "DIR";
-                        break;
-                    case GOPHER_ITEM_ERROR:
-                        prefix = "ERR";
-                        break;
-                    case GOPHER_ITEM_DOSBINARC:
-                    case GOPHER_ITEM_BINARY:
-                        prefix = "BIN";
-                        break;
-                    case GOPHER_ITEM_INDEX_SEARCH_SERVER:
-                        prefix = "ASK";
-                        break;
-                    case GOPHER_ITEM_IMAGE:
-                        prefix = "IMG";
-                        break;
-                    case 'P':
-                    case 'd':
-                        prefix = "PDF";
-                        break;
-                    case GOPHERUS_ITEM_CONT:
-                        prefix = "   ";
-                        break;
-                    case GOPHERUS_ITEM_INVALID:
-                        prefix = "INV";
-                        break;
-                    default: /* unknown type */
-                        prefix = "UNK";
-                        break;
-                }
-                z = 0;
-                if (prefix != NULL) {
-                    ui_cputs(prefix, attr, 0, 1 + (x - *screenlineoffset));
-                    ui_putchar(' ', attr, 3, 1 + (x - *screenlineoffset));
-                    z = 4;
-                }
-                /* select foreground color */
-                /* attr &= 0xF0; */
-                if (x == *selectedline) {
-                    /* attr |= 0x00; */
-                    attr = g->cfg.attr_menucurrent;
-                } else if (line_url[x].itemtype == GOPHER_ITEM_INLINE_MSG) {
-                    /* attr |= 0x07; */
-                    attr = g->cfg.attr_textnorm;
-                } else if (line_url[x].itemtype == GOPHER_ITEM_ERROR) {
-                    attr = g->cfg.attr_menuerr;
-                    /* attr |= 0x04; */
-                } else {
-                    if (isitemtypeselectable(line_url[x].itemtype) != 0) {
-                        attr = g->cfg.attr_menuselectable;
-                        /* attr |= 0x02; */
-                    } else {
-                        attr = g->cfg.attr_textnorm;
-                        /* attr |= 0x08; */
-                    }
-                }
-                /* print the the line's description */
-                draw_field(line_description[x],
-                    attr,
-                    z,
-                    1 + (x - *screenlineoffset),
-                    80,
-                    line_description_len[x]);
-            } else { /* x >= linecount */
-                for (y = 0; y < 80; y++) ui_putchar(' ', g->cfg.attr_textnorm, y, 1 + (x - *screenlineoffset));
+            /* if any position is selected, print the url in status bar */
+            if (*selectedline >= 0) {
+                char url_str[512];
+                build_url(url_str, sizeof url_str, &line_url[*selectedline]);
+                set_statusbar(g->statusbar, url_str);
             }
-        }
 
-        draw_statusbar(g->statusbar, &(g->cfg));
+            /* start drawing lines of the menu */
+            for (x = *screenlineoffset; x < *screenlineoffset + (ui_getrowcount() - 2); x++) {
+                if (x < linecount) {
+                    int z, attr;
+                    char *prefix = NULL;
+                    attr = g->cfg.attr_menuselectable;
+                    if (x == *selectedline) { /* change the background if item is selected */
+                        attr = g->cfg.attr_menucurrent;
+                        /* attr &= 0x0F;
+                           attr |= 0x20; */
+                    } else {
+                        attr = g->cfg.attr_menutype;
+                    }
+                    switch (line_url[x].itemtype) {
+                        case GOPHER_ITEM_INLINE_MSG: /* message */
+                            break;
+                        case GOPHER_ITEM_HTML: /* html */
+                            prefix = "HTM";
+                            break;
+                        case GOPHER_ITEM_FILE: /* text */
+                            prefix = "TXT";
+                            break;
+                        case GOPHER_ITEM_DIR:
+                            prefix = "DIR";
+                            break;
+                        case GOPHER_ITEM_ERROR:
+                            prefix = "ERR";
+                            break;
+                        case GOPHER_ITEM_DOSBINARC:
+                        case GOPHER_ITEM_BINARY:
+                            prefix = "BIN";
+                            break;
+                        case GOPHER_ITEM_INDEX_SEARCH_SERVER:
+                            prefix = "ASK";
+                            break;
+                        case GOPHER_ITEM_IMAGE:
+                            prefix = "IMG";
+                            break;
+                        case 'P':
+                        case 'd':
+                            prefix = "PDF";
+                            break;
+                        case GOPHERUS_ITEM_CONT:
+                            prefix = "   ";
+                            break;
+                        case GOPHERUS_ITEM_INVALID:
+                            prefix = "INV";
+                            break;
+                        default: /* unknown type */
+                            prefix = "UNK";
+                            break;
+                    }
+                    z = 0;
+                    if (prefix != NULL) {
+                        ui_cputs(prefix, attr, 0, 1 + (x - *screenlineoffset));
+                        ui_putchar(' ', attr, 3, 1 + (x - *screenlineoffset));
+                        z = 4;
+                    }
+                    /* select foreground color */
+                    /* attr &= 0xF0; */
+                    if (x == *selectedline) {
+                        /* attr |= 0x00; */
+                        attr = g->cfg.attr_menucurrent;
+                    } else if (line_url[x].itemtype == GOPHER_ITEM_INLINE_MSG) {
+                        /* attr |= 0x07; */
+                        attr = g->cfg.attr_textnorm;
+                    } else if (line_url[x].itemtype == GOPHER_ITEM_ERROR) {
+                        attr = g->cfg.attr_menuerr;
+                        /* attr |= 0x04; */
+                    } else {
+                        if (isitemtypeselectable(line_url[x].itemtype) != 0) {
+                            attr = g->cfg.attr_menuselectable;
+                            /* attr |= 0x02; */
+                        } else {
+                            attr = g->cfg.attr_textnorm;
+                            /* attr |= 0x08; */
+                        }
+                    }
+                    /* print the the line's description */
+                    draw_field(line_description[x],
+                            attr,
+                            z,
+                            1 + (x - *screenlineoffset),
+                            80,
+                            line_description_len[x]);
+                } else { /* x >= linecount */
+                    for (y = 0; y < 80; y++) ui_putchar(' ', g->cfg.attr_textnorm, y, 1 + (x - *screenlineoffset));
+                }
+            }
+
+            draw_statusbar(g->statusbar, &(g->cfg));
+
+            oldline = *selectedline;
+            oldoffset = *screenlineoffset;
+        }
 
         /* wait for keypress */
         keypress = ui_getkey();
