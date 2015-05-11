@@ -139,7 +139,7 @@ int display_menu(struct gopherus *g)
         int keypress;
 
         if (*selectedline != oldline || *screenlineoffset != oldoffset) {
-            int x;
+            int y;
 
             /* if any position is selected, print the url in status bar */
             if (*selectedline >= 0) {
@@ -149,19 +149,19 @@ int display_menu(struct gopherus *g)
             }
 
             /* start drawing lines of the menu */
-            for (x = *screenlineoffset; x < *screenlineoffset + (ui_getrowcount() - 2); x++) {
-                if (x < linecount) {
+            for (y = *screenlineoffset; y < *screenlineoffset + (ui_getrowcount() - 2); y++) {
+                if (y < linecount) {
                     int z, attr;
                     char *prefix = NULL;
                     attr = g->cfg.attr_menuselectable;
-                    if (x == *selectedline) { /* change the background if item is selected */
+                    if (y == *selectedline) { /* change the background if item is selected */
                         attr = g->cfg.attr_menucurrent;
                         /* attr &= 0x0F;
                            attr |= 0x20; */
                     } else {
                         attr = g->cfg.attr_menutype;
                     }
-                    switch (line_url[x].itemtype) {
+                    switch (line_url[y].itemtype) {
                         case GOPHER_ITEM_INLINE_MSG: /* message */
                             break;
                         case GOPHER_ITEM_HTML: /* html */
@@ -202,23 +202,23 @@ int display_menu(struct gopherus *g)
                     }
                     z = 0;
                     if (prefix != NULL) {
-                        ui_cputs(prefix, attr, 0, 1 + (x - *screenlineoffset));
-                        ui_putchar(' ', attr, 3, 1 + (x - *screenlineoffset));
+                        ui_cputs(prefix, attr, 0, 1 + (y - *screenlineoffset));
+                        ui_putchar(' ', attr, 3, 1 + (y - *screenlineoffset));
                         z = 4;
                     }
                     /* select foreground color */
                     /* attr &= 0xF0; */
-                    if (x == *selectedline) {
+                    if (y == *selectedline) {
                         /* attr |= 0x00; */
                         attr = g->cfg.attr_menucurrent;
-                    } else if (line_url[x].itemtype == GOPHER_ITEM_INLINE_MSG) {
+                    } else if (line_url[y].itemtype == GOPHER_ITEM_INLINE_MSG) {
                         /* attr |= 0x07; */
                         attr = g->cfg.attr_textnorm;
-                    } else if (line_url[x].itemtype == GOPHER_ITEM_ERROR) {
+                    } else if (line_url[y].itemtype == GOPHER_ITEM_ERROR) {
                         attr = g->cfg.attr_menuerr;
                         /* attr |= 0x04; */
                     } else {
-                        if (isitemtypeselectable(line_url[x].itemtype) != 0) {
+                        if (isitemtypeselectable(line_url[y].itemtype) != 0) {
                             attr = g->cfg.attr_menuselectable;
                             /* attr |= 0x02; */
                         } else {
@@ -227,15 +227,16 @@ int display_menu(struct gopherus *g)
                         }
                     }
                     /* print the the line's description */
-                    draw_field(line_description[x],
+                    draw_field(line_description[y],
                             attr,
                             z,
-                            1 + (x - *screenlineoffset),
+                            1 + (y - *screenlineoffset),
                             80,
-                            line_description_len[x]);
-                } else { /* x >= linecount */
-                    int y;
-                    for (y = 0; y < 80; y++) ui_putchar(' ', g->cfg.attr_textnorm, y, 1 + (x - *screenlineoffset));
+                            line_description_len[y]);
+                } else { /* y >= linecount */
+                    int x;
+                    for (x = 0; x < 80; x++)
+                        ui_putchar(' ', g->cfg.attr_textnorm, x, 1 + (y - *screenlineoffset));
                 }
             }
 
