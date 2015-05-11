@@ -113,7 +113,7 @@ int display_menu(struct gopherus *g)
                 line_url[linecount].selector = selector;
                 line_url[linecount].host = host;
                 line_url[linecount].itemtype = itemtype;
-                if (port != NULL) {
+                if (port) {
                     line_url[linecount].port = atoi(port);
                     if (line_url[linecount].port < 1) line_url[linecount].port = 70;
                 } else {
@@ -151,16 +151,10 @@ int display_menu(struct gopherus *g)
             /* start drawing lines of the menu */
             for (y = *screenlineoffset; y < *screenlineoffset + (ui_getrowcount() - 2); y++) {
                 if (y < linecount) {
-                    int z, attr;
-                    char *prefix = NULL;
-                    attr = g->cfg.attr_menuselectable;
-                    if (y == *selectedline) { /* change the background if item is selected */
-                        attr = g->cfg.attr_menucurrent;
-                        /* attr &= 0x0F;
-                           attr |= 0x20; */
-                    } else {
-                        attr = g->cfg.attr_menutype;
-                    }
+                    int attr;
+                    int xshift = 0;
+                    const char *prefix = NULL;
+
                     switch (line_url[y].itemtype) {
                         case GOPHER_ITEM_INLINE_MSG: /* message */
                             break;
@@ -200,38 +194,31 @@ int display_menu(struct gopherus *g)
                             prefix = "UNK";
                             break;
                     }
-                    z = 0;
-                    if (prefix != NULL) {
+
+                    if (prefix) {
+                        attr = (y == *selectedline)
+                            ? g->cfg.attr_menucurrent : g->cfg.attr_menutype;
+
                         ui_cputs(prefix, attr, 0, 1 + (y - *screenlineoffset));
                         ui_putchar(' ', attr, 3, 1 + (y - *screenlineoffset));
-                        z = 4;
+                        xshift = 4;
                     }
-                    /* select foreground color */
-                    /* attr &= 0xF0; */
-                    if (y == *selectedline) {
-                        /* attr |= 0x00; */
+
+                    if (y == *selectedline)
                         attr = g->cfg.attr_menucurrent;
-                    } else if (line_url[y].itemtype == GOPHER_ITEM_INLINE_MSG) {
-                        /* attr |= 0x07; */
-                        attr = g->cfg.attr_textnorm;
-                    } else if (line_url[y].itemtype == GOPHER_ITEM_ERROR) {
+                    else if (line_url[y].itemtype == GOPHER_ITEM_ERROR)
                         attr = g->cfg.attr_menuerr;
-                        /* attr |= 0x04; */
-                    } else {
-                        if (isitemtypeselectable(line_url[y].itemtype) != 0) {
-                            attr = g->cfg.attr_menuselectable;
-                            /* attr |= 0x02; */
-                        } else {
-                            attr = g->cfg.attr_textnorm;
-                            /* attr |= 0x08; */
-                        }
-                    }
+                    else if (isitemtypeselectable(line_url[y].itemtype))
+                        attr = g->cfg.attr_menuselectable;
+                    else
+                        attr = g->cfg.attr_textnorm;
+
                     /* print the the line's description */
                     draw_field(line_description[y],
                             attr,
-                            z,
+                            xshift,
                             1 + (y - *screenlineoffset),
-                            80,
+                            80 - xshift,
                             line_description_len[y]);
                 } else { /* y >= linecount */
                     int x;
@@ -252,7 +239,6 @@ int display_menu(struct gopherus *g)
         switch (keypress) {
             case KEY_BACKSPACE:
                 return DISPLAY_ORDER_BACK;
-                break;
             case KEY_TAB:
                 if (edit_url(&(g->history), &(g->cfg)) == 0) return DISPLAY_ORDER_NONE;
                 break;
@@ -299,10 +285,8 @@ int display_menu(struct gopherus *g)
             case KEY_F1: /* help */
                 go_to_help(g);
                 return DISPLAY_ORDER_NONE;
-                break;
             case KEY_F5: /* refresh */
                 return DISPLAY_ORDER_REFR;
-                break;
             case KEY_HOME:
                 if (*selectedline >= 0) *selectedline = firstlinkline;
                 *screenlineoffset = 0;
@@ -346,12 +330,10 @@ int display_menu(struct gopherus *g)
                 break;
             case KEY_QUIT: /* quit immediately */
                 return 1;
-                break;
             default:
                 /* sprintf(singlelinebuf, "Got unknown key press: 0x%02X", keypress);
                    set_statusbar(g->statusbar, singlelinebuf); */
                 continue;
-                break;
         }
 
         /* if the selected line is going out of the screen, adjust the screen (but only if there is a selectedline at all) */
