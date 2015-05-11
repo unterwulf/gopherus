@@ -34,34 +34,35 @@ static int isitemtypeselectable(char itemtype)
 
 int display_menu(struct gopherus *g)
 {
-    char *description, *cursor, *selector, *host, *port, itemtype;
-    int endofline;
-    long bufferlen;
+    char *cursor;
     char *line_description[1024];
     struct url line_url[1024];
     unsigned char line_description_len[1024];
-    int linecount = 0, x, y, column;
+    int linecount = 0;
     char singlelinebuf[128];
     int *selectedline = &(g->history->displaymemory[0]);
     int *screenlineoffset = &(g->history->displaymemory[1]);
     int oldline = -1;
     int oldoffset = -1;
-    int firstlinkline = -1, lastlinkline = -1, keypress;
-    if (*screenlineoffset < 0) *screenlineoffset = 0;
+    int firstlinkline = -1, lastlinkline = -1;
+    long bufferlen = g->history->cachesize;
+
     /* copy the history content into buffer - we need to do this because we'll perform changes on the data */
-    bufferlen = g->history->cachesize;
     memcpy(g->buf, g->history->cache, g->history->cachesize);
     g->buf[bufferlen] = 0;
 
+    if (*screenlineoffset < 0)
+        *screenlineoffset = 0;
+
     for (cursor = g->buf; cursor < (g->buf + bufferlen) ;) {
-        itemtype = *cursor;
-        cursor += 1;
-        column = 0;
-        description = cursor;
-        selector = NULL;
-        host = NULL;
-        port = NULL;
-        endofline = 0;
+        char itemtype = *(cursor++);
+        int column = 0;
+        char *description = cursor;
+        char *selector = NULL;
+        char *host = NULL;
+        char *port = NULL;
+        int endofline = 0;
+
         for (; cursor < (g->buf + bufferlen); cursor += 1) { /* read the whole line */
             if (*cursor == '\r') continue; /* silently ignore CR chars */
             if ((*cursor == '\t') || (*cursor == '\n')) { /* delimiter */
@@ -135,7 +136,10 @@ int display_menu(struct gopherus *g)
         *selectedline = firstlinkline;
 
     for (;;) {
+        int keypress;
+
         if (*selectedline != oldline || *screenlineoffset != oldoffset) {
+            int x;
 
             /* if any position is selected, print the url in status bar */
             if (*selectedline >= 0) {
@@ -230,6 +234,7 @@ int display_menu(struct gopherus *g)
                             80,
                             line_description_len[x]);
                 } else { /* x >= linecount */
+                    int y;
                     for (y = 0; y < 80; y++) ui_putchar(' ', g->cfg.attr_textnorm, y, 1 + (x - *screenlineoffset));
                 }
             }
