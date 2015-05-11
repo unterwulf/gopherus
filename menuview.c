@@ -39,7 +39,6 @@ int display_menu(struct gopherus *g)
     long bufferlen;
     char *line_description[1024];
     struct url line_url[1024];
-    char curURL[512];
     unsigned char line_description_len[1024];
     int linecount = 0, x, y, column;
     char singlelinebuf[128];
@@ -135,11 +134,12 @@ int display_menu(struct gopherus *g)
         *selectedline = firstlinkline;
 
     for (;;) {
-        curURL[0] = 0;
         if (*selectedline >= 0) {   /* if any position is selected, print the url in status bar */
-            build_url(curURL, sizeof curURL, &line_url[*selectedline]);
-            set_statusbar(g->statusbar, curURL);
+            char url_str[512];
+            build_url(url_str, sizeof url_str, &line_url[*selectedline]);
+            set_statusbar(g->statusbar, url_str);
         }
+
         /* start drawing lines of the menu */
         for (x = *screenlineoffset; x < *screenlineoffset + (ui_getrowcount() - 2); x++) {
             if (x < linecount) {
@@ -264,20 +264,18 @@ int display_menu(struct gopherus *g)
                             free(finalselector);
                             return DISPLAY_ORDER_NONE;
                         }
-                    } else { /* itemtype is anything else than type 7 */
-                        struct url next_url;
+                    } else if (line_url[*selectedline].protocol != PARSEURL_PROTO_UNKNOWN) {
+                        /* itemtype is anything else than type 7 */
+                        struct url next_url = line_url[*selectedline];
 
-                        if (parse_url(curURL, &next_url) == 0) {
-                            if (keypress == KEY_F9) {
-                                /* force the itemtype to 'binary' if 'save as' was requested */
-                                next_url.itemtype = GOPHER_ITEM_BINARY;
-                            }
-                            history_add(&(g->history), &next_url);
-                            return DISPLAY_ORDER_NONE;
-                        } else {
-                            set_statusbar(g->statusbar, "!Unknown protocol");
-                            break;
-                        }
+                        /* force the itemtype to 'binary' if 'save as' was requested */
+                        if (keypress == KEY_F9)
+                            next_url.itemtype = GOPHER_ITEM_BINARY;
+
+                        history_add(&(g->history), &next_url);
+                        return DISPLAY_ORDER_NONE;
+                    } else {
+                        set_statusbar(g->statusbar, "!Unknown protocol");
                     }
                 }
                 break;
