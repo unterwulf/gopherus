@@ -20,40 +20,42 @@ struct dnscache_type4 {
 static struct dnscache_type4 dnscache_table4[MAXENTRIES];
 
 /* returns the ip addr if host found in cache, 0 otherwise */
-unsigned long dnscache_ask(char *host)
+unsigned long dnscache_ask(const char *host)
 {
-    int x;
+    size_t i;
     time_t curtime = time(NULL);
 
-    for (x = 0; x < MAXENTRIES; x++)
-        if (curtime - dnscache_table4[x].inserttime < CACHETIME)
-            if (strcasecmp(host, dnscache_table4[x].host) == 0)
-                return dnscache_table4[x].addr;
+    for (i = 0; i < MAXENTRIES; i++)
+        if (curtime - dnscache_table4[i].inserttime < CACHETIME)
+            if (!strcasecmp(host, dnscache_table4[i].host))
+                return dnscache_table4[i].addr;
 
     return 0;
 }
 
 /* adds a new entry to the DNS cache */
-void dnscache_add(char *host, unsigned long ipaddr)
+void dnscache_add(const char *host, unsigned long ipaddr)
 {
-    int x, oldest = 0;
-    /* time_t curtime = time(NULL); */
-    if (strlen(host) > MAXHOSTLEN)
-        return; /* if host len too long, abort */
+    size_t i;
+    size_t oldest = 0;
 
-    for (x = 0; x < MAXENTRIES; x++) {
-        if (dnscache_table4[x].inserttime < dnscache_table4[oldest].inserttime)
-            oldest = x; /* remember the oldest entry */
-        if (dnscache_table4[x].inserttime > 0) { /* check if it's an already known host */
-            if (strcasecmp(dnscache_table4[x].host, host) == 0) {
-                oldest = x;
+    if (strlen(host) > MAXHOSTLEN)
+        return; /* if hostname is too long, just ignore it */
+
+    for (i = 0; i < MAXENTRIES; i++) {
+        if (dnscache_table4[i].inserttime < dnscache_table4[oldest].inserttime)
+            oldest = i; /* remember the oldest entry */
+
+        if (dnscache_table4[i].inserttime > 0) { /* check if it's an already known host */
+            if (!strcasecmp(dnscache_table4[i].host, host)) {
+                oldest = i;
                 break;
             }
         }
     }
 
-    /* remove the oldest entry */
-    /* dnscache_table4[oldest].inserttime = curtime;
-       strcpy(dnscache_table4[oldest].host, host); */
+    /* replace the oldest entry */
+    strcpy(dnscache_table4[oldest].host, host);
     dnscache_table4[oldest].addr = ipaddr;
+    dnscache_table4[oldest].inserttime = time(NULL);
 }

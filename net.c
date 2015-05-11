@@ -28,33 +28,7 @@ static int is_int_pending_adapter(void *sock)
 
 unsigned long net_dnsresolve(const char *name)
 {
-    unsigned long hostaddr = 0;
-    static unsigned long cacheaddr[16];
-    static char cachename[16][64] = {{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0}};
-    int x, freeentry = -1;
-    int namelen = strlen(name);
-
-    if (namelen < 64) {
-        for (x = 0 ; x < 16 ; x++) {
-            if (cachename[x][0] == 0) { /* empty (free) entry */
-                if (freeentry == -1) freeentry = x; /* remember it for later */
-            } else { /* else check if it's what we need */
-                if (strcmp(cachename[x], name) == 0) return cacheaddr[x]; /* if found in cache, stop here */
-            }
-        }
-    }
-
-    hostaddr = lookup_host(name,NULL);
-
-    if (hostaddr == 0)
-        return 0; /* dns resolving error */
-
-    if ((namelen < 64) && (freeentry >= 0)) { /* if not longer than maxlen, and cache not full, then save it */
-        strcpy(cachename[freeentry], name); /* save name in cache */
-        cacheaddr[freeentry] = hostaddr; /* save addr in cache */
-    }
-
-    return hostaddr;
+    return lookup_host(name, NULL);
 }
 
 static int dummy_printf(const char * format, ...)
