@@ -7,6 +7,9 @@
 #include <stdlib.h>   /* atoi() */
 #include "gopher.h"
 #include "parseurl.h"
+#include "snprintf.h"
+
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 int parse_url(char *url_str, struct url *url)
 {
@@ -100,107 +103,68 @@ int parse_url(char *url_str, struct url *url)
     return (url->protocol == PARSEURL_PROTO_UNKNOWN);
 }
 
-static int build_http_url(char *res, int maxlen, const struct url *url)
+static size_t build_http_url(char *str, size_t size, const struct url *url)
 {
     static const char *protoname = "http://";
-    const char *host = url->host;
-    const char *selector = url->selector;
-    int i;
+    size_t len;
 
-    maxlen--;
+    if (size == 0)
+        return 0;
 
-    for (i = 0; protoname[i] && (i < maxlen); i++)
-        res[i] = protoname[i];
+    len = (url->port == 80)
+        ? snprintf(str, size, "%s%s/%s", protoname, url->host, url->selector)
+        : snprintf(str, size, "%s%s:%u/%s", protoname, url->host, url->port, url->selector);
 
-    while (*host && (i < maxlen))
-        res[i++] = *host++;
-
-    /* port (optional, only if not 80) */
-    if (url->port != 80 && (i + 6 < maxlen)) {
-        res[i++] = ':';
-        i += sprintf(&res[i], "%u", url->port);
-    }
-
-    if (i < maxlen)
-        res[i++] = '/';
-
-    while (*selector && (i < maxlen))
-        res[i++] = *selector++;
-
-    res[i] = '\0';
-    return i;
+    return MIN(len, size - 1);
 }
 
-static int build_gopher_url(char *res, int maxlen, const struct url *url)
+static size_t build_gopher_url(char *str, size_t size, const struct url *url)
 {
     static const char *protoname = "gopher://";
-    const char *host = url->host;
     const char *selector = url->selector;
-    int i = 0;
+    size_t len = 0;
 
-    maxlen--;
-
-    if (maxlen < 2) return -1;
-    if (url->port < 1) return -1;
-    if (!host || !res || !selector) return -1;
-    if (url->itemtype < 33) return -1;
+    if (size == 0)
+        return 0;
 
     /* detect special hURL links */
     if (url->itemtype == GOPHER_ITEM_HTML) {
-        if ((strstr(selector, "URL:") == selector) || (strstr(selector, "/URL:") == selector)) {
-            if (selector[0] == '/') selector++;
-            selector += 4;
-            i = 0;
-            while (*selector && (i < maxlen))
-                res[i++] = *selector++;
+        if ((strstr(selector, "URL:") == selector) ||
+            (strstr(selector, "/URL:") == selector)) {
+            selector += 4 + (selector[0] == '/');
+            len = snprintf(str, size, "%s", selector);
         }
-    } else {
-        /* this is a classic gopher location */
-        for (i = 0; protoname[i] && (i < maxlen); i++)
-            res[i] = protoname[i];
-
+    } else if (!url->host[0]) {
         /* if empty host, return only the gopher:// string */
-        if (!host[0]) {
-            res[i] = '\0';
-            return i;
-        }
+        len = snprintf(str, size, "%s", protoname);
+    } else {
+        len = (url->port == 70)
+            ? snprintf(str, size, "%s%s/%c", protoname, url->host, url->itemtype)
+            : snprintf(str, size, "%s%s:%u/%c", protoname, url->host, url->port, url->itemtype);
 
-        /* build the url string */
-        while (*host && (i < maxlen))
-            res[i++] = *host++;
-
-        if (url->port != 70 && (i + 6 < maxlen)) {
-            res[i++] = ':';
-            i += sprintf(&res[i], "%u", url->port);
-        }
-
-        if (i < maxlen)
-            res[i++] = '/';
-
-        if (i < maxlen)
-            res[i++] = url->itemtype;
-
-        for (; *selector && (i < maxlen); selector++) {
+        for (; *selector && (len < size - 1); selector++) {
             if (((unsigned)*selector <= 0x1F) || ((unsigned)*selector >= 0x80)) { /* encode unsafe chars - RFC 1738: */
-                if (i + 2 < maxlen) {                         /* URLs are written only with the graphic printable characters of the  */
-                    res[i++] = '%';                           /* US-ASCII coded character set. The octets 80-FF hexadecimal are not  */
-                    res[i++] = '0' + (*selector >> 4);        /* used in US-ASCII, and the octets 00-1F and 7F hexadecimal represent */
-                    res[i++] = '0' + (*selector & 0x0F);      /* control characters; these must be encoded. */
+                if (len + 2 < size) {                         /* URLs are written only with the graphic printable characters of the  */
+                    str[len++] = '%';                           /* US-ASCII coded character set. The octets 80-FF hexadecimal are not  */
+                    str[len++] = '0' + (*selector >> 4);        /* used in US-ASCII, and the octets 00-1F and 7F hexadecimal represent */
+                    str[len++] = '0' + (*selector & 0x0F);      /* control characters; these must be encoded. */
                 }
             } else {
-                res[i++] = *selector;
+                str[len++] = *selector;
             }
         }
+
+        if (len < size)
+            str[len] = '\0';
     }
 
-    res[i] = '\0';
-    return i;
+    return MIN(len, size - 1);
 }
 
-/* computes an URL string from exploded gopher parts, and returns its length. Returns -1 on error. */
-int build_url(char *res, int maxlen, const struct url *url)
+/* computes an URL string from exploded parts and returns its length */
+size_t build_url(char *str, size_t size, const struct url *url)
 {
     return (url->protocol == PARSEURL_PROTO_HTTP)
-        ? build_http_url(res, maxlen, url)
-        : build_gopher_url(res, maxlen, url);
+        ? build_http_url(str, size, url)
+        : build_gopher_url(str, size, url);
 }

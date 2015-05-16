@@ -39,7 +39,7 @@ void set_statusbar(char *buf, char *msg)
 void draw_urlbar(struct url *url, struct gopherusconfig *cfg)
 {
     char urlstr[80];
-    int url_len = build_url(urlstr, sizeof urlstr, url);
+    size_t url_len = build_url(urlstr, sizeof urlstr, url);
 
     ui_putchar('[', cfg->attr_urlbardeco, 0, 0);
     draw_field(urlstr, cfg->attr_urlbar, 1, 0, 78, url_len);
@@ -163,10 +163,8 @@ exit:
 int edit_url(struct historytype **history, struct gopherusconfig *cfg)
 {
     char url[256];
-    int urllen = build_url(url, sizeof url, &((*history)->url));
 
-    if (urllen < 0)
-        return -1;
+    build_url(url, sizeof url, &((*history)->url));
 
     if (editstring(url, 256, 78, 1, 0, cfg->attr_urlbar, "gopher://") != 0) {
         struct url new_url;

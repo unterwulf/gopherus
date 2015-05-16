@@ -6,6 +6,8 @@
 #ifndef PARSEURL_H
 #define PARSEURL_H
 
+#include <stddef.h>
+
 #define PARSEURL_PROTO_GOPHER 1
 #define PARSEURL_PROTO_HTTP 2
 #define PARSEURL_PROTO_UNKNOWN -1
@@ -23,6 +25,6 @@ struct url {
 int parse_url(char *url_str, struct url *url);
 
 /* builds a URL from exploded parts */
-int build_url(char *res, int maxlen, const struct url *url);
+size_t build_url(char *str, size_t size, const struct url *url);
 
 #endif
