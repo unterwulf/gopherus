@@ -1,4 +1,5 @@
 CFLAGS += -std=gnu89 -Wall -Wextra -mwindows
+CPPFLAGS += -DHAVE_SNPRINTF
 exeext := .exe
 
 objs += \

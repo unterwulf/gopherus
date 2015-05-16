@@ -13,6 +13,6 @@ else
 objs += net-stub.o
 endif
 
-objs += ui.o
+objs += ui.o snprintf.o
 
 distfiles += gopherus.ico
