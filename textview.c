@@ -18,7 +18,7 @@ static int display_text_loop(struct gopherus *g)
     long x;
     long firstline = 1;
     int scroll = -1; /* initial movement to force screen update */
-    long lastrow = ui_getrowcount() - 2;
+    long lastrow = ui_rows - 2;
     char *txtptr;
     int eof_flag = 0;
     char linebuff[81];
@@ -99,12 +99,12 @@ static int display_text_loop(struct gopherus *g)
                 scroll = -firstline;
                 break;
             case KEY_PAGEUP:
-                scroll = -(ui_getrowcount() - 3);
+                scroll = -(ui_rows - 3);
                 break;
             case KEY_END:
                 break;
             case KEY_PAGEDOWN:
-                scroll = ui_getrowcount() - 3;
+                scroll = ui_rows - 3;
                 break;
             case KEY_QUIT: /* QUIT IMMEDIATELY */
                 return 1;

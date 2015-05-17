@@ -50,7 +50,8 @@ void draw_statusbar(char *origmsg, struct gopherusconfig *cfg)
 {
     int x, y, colattr;
     char *msg = origmsg;
-    y = ui_getrowcount() - 1;
+    y = ui_rows - 1;
+
     if (msg[0] == '!') {
         msg += 1;
         colattr = cfg->attr_statusbarwarn; /* this is an important message */

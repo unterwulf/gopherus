@@ -11,9 +11,18 @@
 #include <pc.h>    /* ScreenRows() */
 #include "ui.h"
 
+unsigned int ui_rows;
+unsigned int ui_cols;
+
 void ui_init(void)
 {
-    return;
+    ui_update_screen_size();
+}
+
+void ui_update_screen_size(void)
+{
+    ui_rows = ui_getrowcount();
+    ui_cols = ui_getcolcount();
 }
 
 int ui_getrowcount(void)

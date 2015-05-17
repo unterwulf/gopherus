@@ -149,7 +149,7 @@ int display_menu(struct gopherus *g)
             }
 
             /* start drawing lines of the menu */
-            for (y = *screenlineoffset; y < *screenlineoffset + (ui_getrowcount() - 2); y++) {
+            for (y = *screenlineoffset; y < *screenlineoffset + ((int)ui_rows - 2); y++) {
                 if (y < linecount) {
                     int attr;
                     int xshift = 0;
@@ -251,7 +251,7 @@ int display_menu(struct gopherus *g)
                         sprintf(query, "Enter a query: ");
                         draw_statusbar(query, &(g->cfg));
                         query[0] = 0;
-                        if (editstring(query, 64, 64, 15, ui_getrowcount() - 1, g->cfg.attr_statusbarinfo, NULL) == 0) break;
+                        if (editstring(query, 64, 64, 15, ui_rows - 1, g->cfg.attr_statusbarinfo, NULL) == 0) break;
                         finalselector = malloc(strlen(line_url[*selectedline].selector) + strlen(query) + 2); /* add 1 for the TAB, and 1 for the NULL terminator */
                         if (finalselector == NULL) {
                             set_statusbar(g->statusbar, "Out of memory");
@@ -301,30 +301,30 @@ int display_menu(struct gopherus *g)
                 break;
             case KEY_PAGEUP:
                 if (*selectedline >= 0) {
-                    *selectedline -= (ui_getrowcount() - 3);
+                    *selectedline -= (ui_rows - 3);
                     if (*selectedline < firstlinkline) *selectedline = firstlinkline;
                 }
                 break;
             case KEY_END:
                 if (*selectedline >= 0) *selectedline = lastlinkline;
-                *screenlineoffset = linecount - (ui_getrowcount() - 3);
+                *screenlineoffset = linecount - (ui_rows - 3);
                 if (*screenlineoffset < 0) *screenlineoffset = 0;
                 break;
             case KEY_DOWN:
-                if (*selectedline > *screenlineoffset + ui_getrowcount() - 3) { /* if selected line is below the screen, don't change the selection */
+                if (*selectedline > *screenlineoffset + (int)ui_rows - 3) { /* if selected line is below the screen, don't change the selection */
                     *screenlineoffset += 1;
                     continue;
                 }
                 if (*selectedline < lastlinkline) {
                     while (isitemtypeselectable(line_url[++(*selectedline)].itemtype) == 0); /* select the next item that is selectable */
                 } else {
-                    if (*screenlineoffset < linecount - (ui_getrowcount() - 3)) *screenlineoffset += 1;
+                    if (*screenlineoffset < linecount - ((int)ui_rows - 3)) *screenlineoffset += 1;
                     continue; /* do not force the selected line to be on screen */
                 }
                 break;
             case KEY_PAGEDOWN:
                 if (*selectedline >= 0) {
-                    *selectedline += (ui_getrowcount() - 3);
+                    *selectedline += (ui_rows - 3);
                     if (*selectedline > lastlinkline) *selectedline = lastlinkline;
                 }
                 break;
@@ -339,8 +339,8 @@ int display_menu(struct gopherus *g)
         /* if the selected line is going out of the screen, adjust the screen (but only if there is a selectedline at all) */
         if ((*selectedline < *screenlineoffset) && (*selectedline >= 0)) {
             *screenlineoffset = *selectedline;
-        } else if (*selectedline > *screenlineoffset + (ui_getrowcount() - 3)) {
-            *screenlineoffset = *selectedline - (ui_getrowcount() - 3);
+        } else if (*selectedline > *screenlineoffset + ((int)ui_rows - 3)) {
+            *screenlineoffset = *selectedline - (ui_rows - 3);
             if (*screenlineoffset < 0) *screenlineoffset = 0;
         }
     }

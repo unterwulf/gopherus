@@ -8,7 +8,12 @@
 #ifndef UI_H
 #define UI_H
 
+extern unsigned int ui_rows;
+extern unsigned int ui_cols;
+
 void ui_init(void);
+
+void ui_update_screen_size(void);
 
 /* returns the number of rows of current text mode */
 int ui_getrowcount(void);

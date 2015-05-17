@@ -12,6 +12,9 @@
 #include "ui.h"
 #include "ascii.h" /* ascii fonts */
 
+unsigned int ui_rows;
+unsigned int ui_cols;
+
 static int cursorx, cursory;
 static SDL_Surface *screen;
 static int cursorstate = 1;
@@ -55,6 +58,14 @@ void ui_init(void)
     SDL_EnableKeyRepeat(800, 80); /* enable repeating keys */
     SDL_EnableUNICODE(1);  /* using the SDL unicode support actually for getting ASCII */
     atexit(SDL_Quit); /* clean up at exit time */
+
+    ui_update_screen_size();
+}
+
+void ui_update_screen_size(void)
+{
+    ui_rows = ui_getrowcount();
+    ui_cols = ui_getcolcount();
 }
 
 int ui_getrowcount(void)
