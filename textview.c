@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include "alloca.h"
 #include "common.h"
 #include "gopher.h"
 #include "history.h"
@@ -15,13 +16,13 @@
 
 static int display_text_loop(struct gopherus *g)
 {
-    long x;
+    unsigned int x;
     long firstline = 1;
     int scroll = -1; /* initial movement to force screen update */
     long lastrow = ui_rows - 2;
     char *txtptr;
     int eof_flag = 0;
-    char linebuff[81];
+    char *linebuff = alloca(ui_cols + 1);
     int key;
 
     for (;;) {
@@ -40,9 +41,9 @@ static int display_text_loop(struct gopherus *g)
                     firstline = 0;
 
                 for (txtptr = g->buf; txtptr != NULL && y <= lastrow; lineno++) {
-                    txtptr = wordwrap(linebuff, txtptr, 80);
+                    txtptr = wordwrap(linebuff, txtptr, ui_cols);
                     if (lineno >= firstline) {
-                        draw_field(linebuff, g->cfg.attr_textnorm, 0, y, 80, -1);
+                        draw_field(linebuff, g->cfg.attr_textnorm, 0, y, ui_cols, -1);
                         y++;
                     }
                 }
@@ -52,7 +53,7 @@ static int display_text_loop(struct gopherus *g)
 
                     /* fill the rest of the screen (if any left) with blanks */
                     for (; y <= lastrow; y++) {
-                        for (x = 0; x < 80; x++)
+                        for (x = 0; x < ui_cols; x++)
                             ui_putchar(' ', g->cfg.attr_textnorm, x, y);
                     }
                 } else {

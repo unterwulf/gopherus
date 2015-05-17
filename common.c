@@ -4,6 +4,7 @@
  */
 
 #include <string.h>
+#include "alloca.h"
 #include "common.h"
 #include "history.h"
 #include "parseurl.h"
@@ -30,25 +31,27 @@ void draw_field(const char *str, int attr, int x, int y, int width, int len)
 void set_statusbar(char *buf, char *msg)
 {
     if (buf[0] == 0) { /* accept new status message only if no message set yet */
-        int x;
-        for (x = 0; (x < 80) && (msg[x] != 0); x++) buf[x] = msg[x];
+        size_t x;
+        for (x = 0; (x < ui_cols) && (msg[x] != 0); x++)
+            buf[x] = msg[x];
         buf[x] = 0;
     }
 }
 
 void draw_urlbar(struct url *url, struct gopherusconfig *cfg)
 {
-    char urlstr[80];
-    size_t url_len = build_url(urlstr, sizeof urlstr, url);
+    char *urlstr = alloca(ui_cols - 1);
+    size_t url_len = build_url(urlstr, ui_cols - 1, url);
 
     ui_putchar('[', cfg->attr_urlbardeco, 0, 0);
-    draw_field(urlstr, cfg->attr_urlbar, 1, 0, 78, url_len);
-    ui_putchar(']', cfg->attr_urlbardeco, 79, 0);
+    draw_field(urlstr, cfg->attr_urlbar, 1, 0, ui_cols - 2, url_len);
+    ui_putchar(']', cfg->attr_urlbardeco, ui_cols - 1, 0);
 }
 
 void draw_statusbar(char *origmsg, struct gopherusconfig *cfg)
 {
-    int x, y, colattr;
+    unsigned int x, y;
+    int colattr;
     char *msg = origmsg;
     y = ui_rows - 1;
 
@@ -58,11 +61,11 @@ void draw_statusbar(char *origmsg, struct gopherusconfig *cfg)
     } else {
         colattr = cfg->attr_statusbarinfo;
     }
-    for (x = 0; x < 80; x++) {
+    for (x = 0; x < ui_cols; x++) {
         if (msg[x] == 0) break;
         ui_putchar(msg[x], colattr, x, y); /* Using putchar because otherwise the last line will scroll the screen at its end. */
     }
-    for (; x < 80; x++) ui_putchar(' ', colattr, x, y);
+    for (; x < ui_cols; x++) ui_putchar(' ', colattr, x, y);
     origmsg[0] = 0; /* clear out the status message once it's displayed */
 }
 
@@ -167,7 +170,7 @@ int edit_url(struct historytype **history, struct gopherusconfig *cfg)
 
     build_url(url, sizeof url, &((*history)->url));
 
-    if (editstring(url, 256, 78, 1, 0, cfg->attr_urlbar, "gopher://") != 0) {
+    if (editstring(url, 256, ui_cols - 2, 1, 0, cfg->attr_urlbar, "gopher://") != 0) {
         struct url new_url;
         if (parse_url(url, &new_url) == 0) {
             history_add(history, &new_url);

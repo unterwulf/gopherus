@@ -102,9 +102,9 @@ int display_menu(struct gopherus *g)
                     itemtype = GOPHERUS_ITEM_CONT;
 
                 if (itemtype == GOPHER_ITEM_INLINE_MSG) {
-                    wraplen = 80;
+                    wraplen = ui_cols;
                 } else {
-                    wraplen = 76;
+                    wraplen = ui_cols - 4;
                 }
                 line_description[linecount] = wrapptr;
                 wrapptr = wordwrap(singlelinebuf, wrapptr, wraplen);
@@ -218,11 +218,11 @@ int display_menu(struct gopherus *g)
                             attr,
                             xshift,
                             1 + (y - *screenlineoffset),
-                            80 - xshift,
+                            ui_cols - xshift,
                             line_description_len[y]);
                 } else { /* y >= linecount */
-                    int x;
-                    for (x = 0; x < 80; x++)
+                    unsigned int x;
+                    for (x = 0; x < ui_cols; x++)
                         ui_putchar(' ', g->cfg.attr_textnorm, x, 1 + (y - *screenlineoffset));
                 }
             }
