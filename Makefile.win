@@ -49,4 +49,5 @@ pkg: gopherus.exe
 
 clean:
 	del *.o
+	del gopherus.res
 	del gopherus.exe

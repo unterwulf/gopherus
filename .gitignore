@@ -4,6 +4,7 @@
 *.MAP
 *.exe
 *.EXE
+*.res
 cscope.*
 gopherus
 wraptest
