@@ -3,15 +3,17 @@ LIBS = -lSDL -lws2_32
 
 all: gopherus.exe
 
-gopherus.exe: gopherus.o dnscache.o history.o int2str.o net.o parseurl.o startpg.o ui.o wordwrap.o
-	windres gopherus.rc -O coff -o gopherus.res
-	$(CC) -mwindows $^ gopherus.res $(LIBS) -o $@
+gopherus.exe: gopherus.o dnscache.o history.o int2str.o net.o parseurl.o startpg.o ui.o wordwrap.o gopherus.res
+	$(CC) -mwindows $^ $(LIBS) -o $@
 
 net.o: net-win.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 ui.o: ui-sdl.c
 	$(CC) $(CFLAGS) -c $< -o $@
+
+gopherus.res: gopherus.rc gopherus.ico
+	windres $< -O coff -o $@
 
 wraptest.exe: wraptest.o wordwrap.o
 	$(CC) $^ -o $@
