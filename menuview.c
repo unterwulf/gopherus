@@ -14,8 +14,9 @@
 #include "ui.h"
 #include "wordwrap.h"
 
-/* internal itemtype for continuation of the previous (wrapped) menu line */
-#define GOPHERUS_ITEM_CONT 0
+/* Internal itemtypes: */
+#define GOPHERUS_ITEM_CONT      0    /* continuation of the previous menu item */
+#define GOPHERUS_ITEM_INVALID   0x7F /* malformed menu item */
 
 /* used by display_menu to tell whether an itemtype is selectable or not */
 static int isitemtypeselectable(char itemtype)
@@ -24,6 +25,7 @@ static int isitemtypeselectable(char itemtype)
         case GOPHER_ITEM_INLINE_MSG:
         case GOPHER_ITEM_ERROR:
         case GOPHERUS_ITEM_CONT:
+        case GOPHERUS_ITEM_INVALID:
             return 0;
         default:   /* everything else is selectable */
             return 1;
@@ -83,6 +85,10 @@ int display_menu(struct gopherus *g)
             }
         }
         if (itemtype == '.') continue; /* ignore lines starting by '.' - it's most probably the end of menu terminator */
+
+        if (isitemtypeselectable(itemtype) && !(selector && host))
+            itemtype = GOPHERUS_ITEM_INVALID;
+
         if (linecount < 1024) {
             char *wrapptr = description;
             int wraplen;
@@ -180,6 +186,9 @@ int display_menu(struct gopherus *g)
                         break;
                     case GOPHERUS_ITEM_CONT:
                         prefix = "   ";
+                        break;
+                    case GOPHERUS_ITEM_INVALID:
+                        prefix = "INV";
                         break;
                     default: /* unknown type */
                         prefix = "UNK";
