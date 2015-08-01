@@ -6,7 +6,6 @@ all: gopherus
 
 gopherus: gopherus.o dnscache.o history.o int2str.o net.o parseurl.o startpg.o ui.o wordwrap.o
 	$(CC) $^ $(LIBS) -o $@
-	$(UPX) --best --lzma --all-filters $@
 
 net.o: net-lin.c
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -20,7 +19,7 @@ wraptest: wraptest.o wordwrap.o
 pkg: gopherus
 	$(RM) -r pkg_lin
 	mkdir pkg_lin
-	cp gopherus pkg_lin
+	$(UPX) --best --lzma --all-filters -o pkg_lin/$< $<
 	cp gopherus.txt pkg_lin
 	cp license.txt pkg_lin
 	cp history.txt pkg_lin

@@ -10,7 +10,6 @@ all: gopherus.exe
 
 gopherus.exe: gopherus.o dnscache.o history.o int2str.o net.o parseurl.o startpg.o ui.o wordwrap.o
 	$(CC) $^ $(LIBS) -o $@
-	$(UPX) --best --lzma --all-filters $@
 
 wraptest.exe: wraptest.o wordwrap.o
 	$(CC) $^ -o $@
@@ -18,7 +17,7 @@ wraptest.exe: wraptest.o wordwrap.o
 pkg: gopherus.exe
 	if exist pkg_dos\nul deltree /y pkg_dos
 	mkdir pkg_dos
-	copy gopherus.exe pkg_dos
+	$(UPX) --best --lzma --all-filters -o pkg_dos/$< $<
 	copy gopherus.txt pkg_dos
 	copy license.txt pkg_dos
 	copy history.txt pkg_dos
