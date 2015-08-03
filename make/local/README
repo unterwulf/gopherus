@@ -1,0 +1,11 @@
+All local parameters that you need to pass to make via command
+line can be conveniently set in configuration files under this
+directory.
+
+So that you can just type
+
+    make HOST=dos
+
+instead of
+
+    make HOST=dos CROSS_COMPILE=i586-pc-msdosdjgpp- WATT_ROOT=/path/to/watt32
