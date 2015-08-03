@@ -6,6 +6,4 @@ objs += \
 	ui-sdl.o \
 	gopherus.res
 
-libs += -lSDL -lws2_32
-
-distfiles += SDL.dll
+libs += -Wl,-Bstatic -lSDLmain -lSDL -Wl,-Bdynamic -lm -luser32 -lgdi32 -lwinmm -ldxguid -lws2_32

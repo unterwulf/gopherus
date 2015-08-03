@@ -27,9 +27,6 @@ $(pkgdir)/$(progname): $(objdir)/$(progname)
 $(pkgdir)/gopherus.svg: $(srcdir)/icon.svg
 	$(call cp,$< $@)
 
-$(pkgdir)/SDL.dll: $(srcdir)/SDL.dll
-	$(call cp,$< $@)
-
 $(pkgdir)/%.ico: $(srcdir)/%.ico
 	$(call cp,$< $@)
 
